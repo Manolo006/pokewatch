@@ -73,7 +73,7 @@ export default async function SeasonPage({ params }: SeasonPageProps) {
       <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-[1200px] items-center justify-between px-4 py-4 sm:px-8">
           <Link
-            href="/"
+            href="./"
             className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-2 text-sm font-semibold transition hover:bg-white/20"
           >
             <IoArrowBack aria-hidden="true" />
