@@ -1,0 +1,294 @@
+[
+  {
+    "rowTitle": "Saga Classica",
+    "seasons": [
+      {
+        "season": 1,
+        "title": "Pokémon: Indigo League",
+        "arc": "Kanto",
+        "synopsis": "Ash inizia il suo viaggio insieme a Pikachu, tra palestre e incontri leggendari.",
+        "episodes": 52,
+        "years": "1997-1999",
+        "accent": "from-blue-600/90"
+      },
+      {
+        "season": 2,
+        "title": "Adventures in the Orange Islands",
+        "arc": "Orange Islands",
+        "synopsis": "Un'avventura tropicale con nuove sfide e lotte fuori rotta rispetto alla Lega.",
+        "episodes": 60,
+        "years": "1999",
+        "accent": "from-orange-500/90"
+      },
+      {
+        "season": 3,
+        "title": "The Johto Journeys",
+        "arc": "Johto",
+        "synopsis": "Nuova regione, nuovi starter e rivali sempre più competitivi.",
+        "episodes": 39,
+        "years": "1999-2000",
+        "accent": "from-green-600/90"
+      },
+      {
+        "season": 4,
+        "title": "Johto League Champions",
+        "arc": "Johto",
+        "synopsis": "Ash punta alla vetta della Lega Johto con strategie più mature.",
+        "episodes": 52,
+        "years": "2000-2001",
+        "accent": "from-cyan-600/90"
+      },
+      {
+        "season": 5,
+        "title": "Pokémon Master Quest",
+        "arc": "Johto",
+        "synopsis": "La corsa finale nella regione di Johto prepara Ash alla Silver Conference.",
+        "episodes": 64,
+        "years": "2001-2002",
+        "accent": "from-sky-600/90"
+      }
+    ]
+  },
+  {
+    "rowTitle": "Generazione Advanced",
+    "seasons": [
+      {
+        "season": 6,
+        "title": "Pokémon: Advanced",
+        "arc": "Hoenn",
+        "synopsis": "Nuovi compagni, contest Pokémon e le prime sfide nella regione di Hoenn.",
+        "episodes": 40,
+        "years": "2002-2003",
+        "accent": "from-emerald-600/90"
+      },
+      {
+        "season": 7,
+        "title": "Pokémon: Advanced Challenge",
+        "arc": "Hoenn",
+        "synopsis": "Le sfide si alzano tra lotte in palestra e il Grande Festival.",
+        "episodes": 52,
+        "years": "2003-2004",
+        "accent": "from-lime-500/90"
+      },
+      {
+        "season": 8,
+        "title": "Pokémon: Advanced Battle",
+        "arc": "Hoenn",
+        "synopsis": "Rivali più forti e lotte decisive portano Ash verso la Lega Hoenn.",
+        "episodes": 53,
+        "years": "2004-2005",
+        "accent": "from-teal-600/90"
+      },
+      {
+        "season": 9,
+        "title": "Pokémon: Battle Frontier",
+        "arc": "Kanto",
+        "synopsis": "La Frontiera Lotta mette alla prova tattica, resistenza e spirito di squadra.",
+        "episodes": 47,
+        "years": "2005-2006",
+        "accent": "from-indigo-600/90"
+      }
+    ]
+  },
+  {
+    "rowTitle": "Diamond & Pearl",
+    "seasons": [
+      {
+        "season": 10,
+        "title": "Pokémon: Diamond and Pearl",
+        "arc": "Sinnoh",
+        "synopsis": "Nuova squadra e nuove tecniche in una regione ricca di miti e leggende.",
+        "episodes": 52,
+        "years": "2006-2007",
+        "accent": "from-sky-500/90"
+      },
+      {
+        "season": 11,
+        "title": "DP Battle Dimension",
+        "arc": "Sinnoh",
+        "synopsis": "La competizione si intensifica mentre i rivali affinano tattiche e strategie.",
+        "episodes": 52,
+        "years": "2007-2008",
+        "accent": "from-fuchsia-500/90"
+      },
+      {
+        "season": 12,
+        "title": "DP Galactic Battles",
+        "arc": "Sinnoh",
+        "synopsis": "Team Galactic entra in scena e minaccia l'equilibrio dell'intera regione.",
+        "episodes": 53,
+        "years": "2008-2009",
+        "accent": "from-violet-600/90"
+      },
+      {
+        "season": 13,
+        "title": "DP Sinnoh League Victors",
+        "arc": "Sinnoh",
+        "synopsis": "La Lega Sinnoh decide chi merita davvero il titolo di miglior allenatore.",
+        "episodes": 34,
+        "years": "2010",
+        "accent": "from-rose-500/90"
+      }
+    ]
+  },
+  {
+    "rowTitle": "Black & White",
+    "seasons": [
+      {
+        "season": 14,
+        "title": "Pokémon: Black & White",
+        "arc": "Unima",
+        "synopsis": "Ash e Pikachu partono per Unima, affrontando una regione piena di nuovi Pokémon e rivali.",
+        "episodes": null,
+        "years": "2010-2011",
+        "accent": "from-zinc-600/90"
+      },
+      {
+        "season": 15,
+        "title": "BW: Rival Destinies",
+        "arc": "Unima",
+        "synopsis": "Le rivalità si intensificano mentre il cammino verso la Lega Unima entra nel vivo.",
+        "episodes": null,
+        "years": "2011-2012",
+        "accent": "from-slate-600/90"
+      },
+      {
+        "season": 16,
+        "title": "BW: Adventures in Unova and Beyond",
+        "arc": "Unima",
+        "synopsis": "Il viaggio continua oltre Unima, tra sfide finali e nuovi incontri decisivi.",
+        "episodes": null,
+        "years": "2012-2013",
+        "accent": "from-stone-600/90"
+      }
+    ]
+  },
+  {
+    "rowTitle": "XY",
+    "seasons": [
+      {
+        "season": 17,
+        "title": "Pokémon the Series: XY",
+        "arc": "Kalos",
+        "synopsis": "Ash arriva a Kalos e forma una nuova squadra per esplorare palestre e misteri della regione.",
+        "episodes": null,
+        "years": "2013-2014",
+        "accent": "from-blue-500/90"
+      },
+      {
+        "season": 18,
+        "title": "Pokémon the Series: XY Kalos Quest",
+        "arc": "Kalos",
+        "synopsis": "La corsa ai badge prosegue mentre Serena insegue i suoi obiettivi nelle esibizioni Pokémon.",
+        "episodes": null,
+        "years": "2014-2015",
+        "accent": "from-cyan-500/90"
+      },
+      {
+        "season": 19,
+        "title": "Pokémon the Series: XYZ",
+        "arc": "Kalos",
+        "synopsis": "La minaccia di Team Flare cresce, con sfide cruciali per il destino di Kalos.",
+        "episodes": null,
+        "years": "2015-2016",
+        "accent": "from-indigo-500/90"
+      }
+    ]
+  },
+  {
+    "rowTitle": "Sun & Moon",
+    "seasons": [
+      {
+        "season": 20,
+        "title": "Pokémon the Series: Sun & Moon",
+        "arc": "Alola",
+        "synopsis": "Ad Alola, Ash vive esperienze scolastiche e nuove avventure in un format diverso dal solito.",
+        "episodes": null,
+        "years": "2016-2017",
+        "accent": "from-yellow-500/90"
+      },
+      {
+        "season": 21,
+        "title": "Pokémon the Series: Sun & Moon - Ultra Adventures",
+        "arc": "Alola",
+        "synopsis": "Le avventure si ampliano con nuove Ultracreature e sfide sempre più impegnative.",
+        "episodes": null,
+        "years": "2017-2018",
+        "accent": "from-amber-500/90"
+      },
+      {
+        "season": 22,
+        "title": "Pokémon the Series: Sun & Moon - Ultra Legends",
+        "arc": "Alola",
+        "synopsis": "Il percorso ad Alola si conclude con sfide epiche e il culmine della Lega locale.",
+        "episodes": null,
+        "years": "2018-2019",
+        "accent": "from-orange-400/90"
+      }
+    ]
+  },
+  {
+    "rowTitle": "Pokémon Journeys",
+    "seasons": [
+      {
+        "season": 23,
+        "title": "Pokémon Journeys: The Series",
+        "arc": "Mondo Pokémon",
+        "synopsis": "Ash e Goh viaggiano attraverso molte regioni, incontrando Pokémon vecchi e nuovi.",
+        "episodes": null,
+        "years": "2019-2020",
+        "accent": "from-violet-500/90"
+      },
+      {
+        "season": 24,
+        "title": "Pokémon Master Journeys: The Series",
+        "arc": "Mondo Pokémon",
+        "synopsis": "La scalata nel World Coronation Series prosegue con incontri sempre più prestigiosi.",
+        "episodes": null,
+        "years": "2020-2021",
+        "accent": "from-purple-500/90"
+      },
+      {
+        "season": 25,
+        "title": "Pokémon Ultimate Journeys: The Series",
+        "arc": "Mondo Pokémon",
+        "synopsis": "Il cammino di Ash verso il vertice mondiale arriva alle battaglie finali decisive.",
+        "episodes": null,
+        "years": "2021-2023",
+        "accent": "from-fuchsia-600/90"
+      }
+    ]
+  },
+  {
+    "rowTitle": "Pokémon Orizonti: La serie",
+    "seasons": [
+        {
+          "season": 26,
+          "title": "Pokémon Orizonti: The Series",
+          "arc": "Paldea e oltre",
+          "synopsis": "Una nuova generazione di protagonisti esplora il mondo Pokémon con un viaggio inedito.",
+          "episodes": null,
+          "years": "2023-",
+          "accent": "from-emerald-500/90"
+        },
+        {
+          "season": 27,
+          "title": "Pokémon Orizonti: Alla ricerca di Laqua",
+          "arc": "Paldea e oltre",
+          "synopsis": "Le avventure continuano con nuove sfide, Pokémon e misteri da svelare.",
+          "episodes": null,
+          "years": "2024-",
+          "accent": "from-green-500/90"
+        },
+        {
+          "season": 28,
+          "title": "Pokémon Orizonti: The Series - Leggende e Oltre",
+          "arc": "Paldea e oltre",
+          "synopsis": "Il viaggio si arricchisce di leggende, sfide epiche e incontri indimenticabili.",
+          "episodes": null,
+          "years": "2024-",
+          "accent": "from-teal-500/90"
+        }
+    ]
+  }
+]

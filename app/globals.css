@@ -1,28 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #141414;
+  --foreground: #f5f5f5;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-lexend);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #141414;
+    --foreground: #f5f5f5;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-lexend), Arial, Helvetica, sans-serif;
   margin: 0;
 }
 
@@ -47,4 +47,9 @@ body {
 
 *::-webkit-scrollbar-thumb:hover {
   background: #5b6270;
+}
+
+.netflix-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #424754 #10131b;
 }
