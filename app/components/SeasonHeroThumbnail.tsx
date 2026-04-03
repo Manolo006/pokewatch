@@ -11,10 +11,10 @@ type SeasonHeroThumbnailProps = {
 };
 
 const getThumbnailCandidates = (seasonNumber: number) => [
-  `/seasons/s${seasonNumber}.jpg`,
-  `/seasons/s${seasonNumber}.jpeg`,
-  `/seasons/s${seasonNumber}.png`,
-  `/seasons/s${seasonNumber}.webp`,
+  `./seasons/s${seasonNumber}.jpg`,
+  `./seasons/s${seasonNumber}.jpeg`,
+  `./seasons/s${seasonNumber}.png`,
+  `./seasons/s${seasonNumber}.webp`,
 ];
 
 export default function SeasonHeroThumbnail({

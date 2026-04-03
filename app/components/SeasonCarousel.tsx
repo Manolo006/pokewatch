@@ -26,10 +26,10 @@ const STANDARD_CARD_HEIGHT = 360;
 const WATCHED_COOKIE_PREFIX = "pokewatch-watched-season";
 
 const getThumbnailCandidates = (seasonNumber: number) => [
-  `/seasons/s${seasonNumber}.jpg`,
-  `/seasons/s${seasonNumber}.jpeg`,
-  `/seasons/s${seasonNumber}.png`,
-  `/seasons/s${seasonNumber}.webp`,
+  `./seasons/s${seasonNumber}.jpg`,
+  `./seasons/s${seasonNumber}.jpeg`,
+  `./seasons/s${seasonNumber}.png`,
+  `./seasons/s${seasonNumber}.webp`,
 ];
 
 const getCookieValue = (cookieName: string) => {
