@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import NextImage from "next/image";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { GoDotFill } from "react-icons/go";
 import { IoCheckmark } from "react-icons/io5";
@@ -115,11 +114,11 @@ function SeasonThumbnail({ seasonNumber, title, arc, accent }: SeasonThumbnailPr
   return (
     <div className="relative aspect-video w-full overflow-hidden p-4">
       {thumbnailSrc ? (
-        <NextImage
+        <img
           src={thumbnailSrc}
           alt={title}
-          fill
-          sizes="300px"
+          loading="lazy"
+          decoding="async"
           className="absolute inset-0 h-full w-full object-cover"
         />
       ) : (

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import NextImage from "next/image";
 
 type SeasonHeroThumbnailProps = {
   seasonNumber: number;
@@ -11,6 +10,10 @@ type SeasonHeroThumbnailProps = {
 };
 
 const getThumbnailCandidates = (seasonNumber: number) => [
+  `../seasons/s${seasonNumber}.jpg`,
+  `../seasons/s${seasonNumber}.jpeg`,
+  `../seasons/s${seasonNumber}.png`,
+  `../seasons/s${seasonNumber}.webp`,
   `./seasons/s${seasonNumber}.jpg`,
   `./seasons/s${seasonNumber}.jpeg`,
   `./seasons/s${seasonNumber}.png`,
@@ -62,7 +65,7 @@ export default function SeasonHeroThumbnail({
   return (
     <div className={`relative overflow-hidden ${className}`}>
       {thumbnailSrc ? (
-        <NextImage src={thumbnailSrc} alt={title} fill sizes="1200px" className="object-cover" />
+        <img src={thumbnailSrc} alt={title} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
       ) : (
         <div className={`absolute inset-0 bg-gradient-to-r ${accent} via-slate-700 to-black`} />
       )}

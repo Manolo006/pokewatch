@@ -1,5 +1,4 @@
 import SeasonCarousel from "./components/SeasonCarousel";
-import Image from "next/image";
 import { GoDotFill } from "react-icons/go";
 import { IoAdd, IoPlay } from "react-icons/io5";
 import { episodesLabel, latestSeason, seasonRows, type PokemonSeason } from "./data/pokemonCatalog";
@@ -21,7 +20,7 @@ export default function Home() {
       <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-[1500px] items-center justify-between px-4 py-4 sm:px-8">
           <div className="flex items-center gap-4">
-            <Image src="./logo.png" alt="PokéWatch" width={180} height={42} priority className="h-auto w-[150px] sm:w-[180px]" />
+            <img src="./logo.png" alt="PokéWatch" width={180} height={42} className="h-auto w-[150px] sm:w-[180px]" />
             <span className="rounded bg-yellow-400 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-black">
               ANIME
             </span>
