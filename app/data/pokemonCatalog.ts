@@ -41,7 +41,7 @@ const trendingSeasons: PokemonSeason[] = [
     season: 103,
     title: "Pokémon Eclipse Quest",
     arc: "Trend 3",
-    synopsis: "Placeholder : un viaggio tra fenomeni rari e leggende antiche mai esplorate.",
+    synopsis: "Placeholder: un viaggio tra fenomeni rari e leggende antiche mai esplorate.",
     episodes: null,
     years: "Prossimamente",
     accent: "from-purple-600/90",

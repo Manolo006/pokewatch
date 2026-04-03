@@ -108,7 +108,7 @@ export default async function SeasonPage({ params }: SeasonPageProps) {
 
             <div className="flex flex-wrap gap-3 pt-2">
               <Link
-                href={`/stagione/${previousSeason.season}`}
+                href={`./stagione/${previousSeason.season}`}
                 className="inline-flex items-center gap-2 rounded bg-white/10 px-4 py-2 text-sm font-semibold transition hover:bg-white/20"
                 aria-label={`Vai alla stagione precedente: ${previousSeason.title}`}
               >
@@ -117,7 +117,7 @@ export default async function SeasonPage({ params }: SeasonPageProps) {
               </Link>
 
               <Link
-                href={`/stagione/${nextSeason.season}`}
+                href={`./stagione/${nextSeason.season}`}
                 className="inline-flex items-center gap-2 rounded bg-white/10 px-4 py-2 text-sm font-semibold transition hover:bg-white/20"
                 aria-label={`Vai alla stagione successiva: ${nextSeason.title}`}
               >
