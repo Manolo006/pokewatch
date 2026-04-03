@@ -3,9 +3,36 @@ export type YouTubePlaylistVideo = {
   title: string;
   thumbnailUrl: string;
   youtubeUrl: string;
+  duration?: string;
 };
 
 const PLAYLIST_ID_REGEX = /[?&]list=([a-zA-Z0-9_-]+)/;
+
+type YouTubePlaylistItemsApiResponse = {
+  nextPageToken?: string;
+  items?: Array<{
+    snippet?: {
+      title?: string;
+      resourceId?: {
+        videoId?: string;
+      };
+      thumbnails?: {
+        high?: { url?: string };
+        medium?: { url?: string };
+        default?: { url?: string };
+      };
+    };
+  }>;
+};
+
+type YouTubeVideosApiResponse = {
+  items?: Array<{
+    id?: string;
+    contentDetails?: {
+      duration?: string;
+    };
+  }>;
+};
 
 const decodeYouTubeText = (value: string) =>
   value
@@ -21,6 +48,130 @@ const extractPlaylistId = (playlistUrl: string) => {
   return match?.[1] ?? null;
 };
 
+const parseIsoDurationToLabel = (isoDuration?: string) => {
+  if (!isoDuration) return undefined;
+
+  const match = isoDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!match) return undefined;
+
+  const hours = Number(match[1] ?? 0);
+  const minutes = Number(match[2] ?? 0);
+  const seconds = Number(match[3] ?? 0);
+
+  if (hours > 0) {
+    if (minutes > 0) return `${hours} h ${minutes} min`;
+    return `${hours} h`;
+  }
+
+  if (minutes > 0 && seconds > 0) return `${minutes} min ${seconds} sec`;
+  if (minutes > 0) return `${minutes} min`;
+  if (seconds > 0) return `${seconds} sec`;
+
+  return undefined;
+};
+
+const chunk = <T>(items: T[], size: number) => {
+  const result: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    result.push(items.slice(i, i + size));
+  }
+  return result;
+};
+
+async function getPlaylistVideosViaApi(
+  playlistId: string,
+  maxItems: number,
+  apiKey: string
+): Promise<YouTubePlaylistVideo[]> {
+  const playlistVideos: YouTubePlaylistVideo[] = [];
+  let nextPageToken: string | undefined;
+
+  while (playlistVideos.length < maxItems) {
+    const params = new URLSearchParams({
+      part: "snippet",
+      playlistId,
+      maxResults: String(Math.min(50, maxItems - playlistVideos.length)),
+      key: apiKey,
+    });
+
+    if (nextPageToken) {
+      params.set("pageToken", nextPageToken);
+    }
+
+    const response = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?${params.toString()}`, {
+      next: { revalidate: 3600 },
+    });
+
+    if (!response.ok) {
+      break;
+    }
+
+    const data = (await response.json()) as YouTubePlaylistItemsApiResponse;
+
+    for (const item of data.items ?? []) {
+      const videoId = item.snippet?.resourceId?.videoId;
+      if (!videoId) continue;
+
+      const title = item.snippet?.title?.trim() || "Episodio";
+      const thumbnailUrl =
+        item.snippet?.thumbnails?.high?.url ||
+        item.snippet?.thumbnails?.medium?.url ||
+        item.snippet?.thumbnails?.default?.url ||
+        `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+      playlistVideos.push({
+        videoId,
+        title,
+        thumbnailUrl,
+        youtubeUrl: `https://www.youtube.com/watch?v=${videoId}`,
+      });
+
+      if (playlistVideos.length >= maxItems) break;
+    }
+
+    if (!data.nextPageToken) break;
+    nextPageToken = data.nextPageToken;
+  }
+
+  if (playlistVideos.length === 0) return playlistVideos;
+
+  const durationMap = new Map<string, string>();
+  const videoIdChunks = chunk(
+    [...new Set(playlistVideos.map((video) => video.videoId))],
+    50
+  );
+
+  for (const ids of videoIdChunks) {
+    const params = new URLSearchParams({
+      part: "contentDetails",
+      id: ids.join(","),
+      key: apiKey,
+    });
+
+    const response = await fetch(`https://www.googleapis.com/youtube/v3/videos?${params.toString()}`, {
+      next: { revalidate: 3600 },
+    });
+
+    if (!response.ok) continue;
+
+    const data = (await response.json()) as YouTubeVideosApiResponse;
+    for (const item of data.items ?? []) {
+      const id = item.id;
+      if (!id) continue;
+
+      const duration = parseIsoDurationToLabel(item.contentDetails?.duration);
+      if (duration) {
+        durationMap.set(id, duration);
+      }
+    }
+  }
+
+  return playlistVideos.map((video) => ({
+    ...video,
+    duration: durationMap.get(video.videoId),
+  }));
+}
+
 export async function getYouTubePlaylistVideos(
   playlistUrl: string,
   maxItems = 50
@@ -28,6 +179,15 @@ export async function getYouTubePlaylistVideos(
   const playlistId = extractPlaylistId(playlistUrl);
 
   if (!playlistId) return [];
+
+  const apiKey = process.env.YOUTUBE_API_KEY;
+
+  if (apiKey) {
+    const apiVideos = await getPlaylistVideosViaApi(playlistId, maxItems, apiKey);
+    if (apiVideos.length > 0) {
+      return apiVideos;
+    }
+  }
 
   const response = await fetch(`https://www.youtube.com/playlist?list=${playlistId}`, {
     next: { revalidate: 3600 },

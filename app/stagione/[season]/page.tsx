@@ -1,5 +1,4 @@
 import Link from "next/link";
-import NextImage from "next/image";
 import { notFound } from "next/navigation";
 import { GoDotFill } from "react-icons/go";
 import { IoArrowBack, IoChevronBack, IoChevronForward } from "react-icons/io5";
@@ -11,6 +10,7 @@ import {
 } from "@/app/data/pokemonCatalog";
 import { getSeasonPlaylistUrl } from "@/app/data/seasonPlaylists";
 import SeasonHeroThumbnail from "@/app/components/SeasonHeroThumbnail";
+import SeasonEpisodesList from "@/app/components/SeasonEpisodesList";
 import { getYouTubePlaylistVideos } from "@/app/lib/youtubePlaylist";
 
 type SeasonPageProps = {
@@ -56,6 +56,7 @@ export default async function SeasonPage({ params }: SeasonPageProps) {
     return {
       ...episode,
       title: youtubeVideo.title || episode.title,
+      duration: youtubeVideo.duration || episode.duration,
       thumbnailUrl: youtubeVideo.thumbnailUrl,
       youtubeUrl: youtubeVideo.youtubeUrl,
     };
@@ -122,54 +123,7 @@ export default async function SeasonPage({ params }: SeasonPageProps) {
         </section>
 
         <section className="mt-8 space-y-4 sm:mt-10">
-          <h2 className="text-2xl font-bold">Episodi</h2>
-
-          <div className="space-y-3">
-            {episodes.map((episode) => (
-              <article key={episode.number} className="rounded-lg border border-white/10 bg-zinc-900/80 p-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-                  <div className="relative h-24 w-full overflow-hidden rounded-md border border-white/10 bg-black sm:h-20 sm:w-36 sm:shrink-0">
-                    {episode.thumbnailUrl ? (
-                      <NextImage
-                        src={episode.thumbnailUrl}
-                        alt={episode.title}
-                        fill
-                        sizes="(max-width: 640px) 100vw, 144px"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-xs text-white/40">
-                        Nessuna thumbnail
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-bold text-white/90">
-                    {episode.number}
-                  </div>
-
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h3 className="text-base font-bold sm:text-lg">{episode.title}</h3>
-                      <span className="text-xs text-white/60">{episode.duration}</span>
-                    </div>
-                    <p className="text-sm text-white/70">{episode.synopsis}</p>
-
-                    {episode.youtubeUrl ? (
-                      <a
-                        href={episode.youtubeUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex pt-1 text-xs font-semibold text-red-300 transition hover:text-red-200"
-                      >
-                        Guarda su YouTube
-                      </a>
-                    ) : null}
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
+          <SeasonEpisodesList seasonNumber={selectedSeason.season} episodes={episodes} />
         </section>
       </main>
     </div>

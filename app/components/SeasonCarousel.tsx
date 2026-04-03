@@ -5,6 +5,7 @@ import Link from "next/link";
 import NextImage from "next/image";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { GoDotFill } from "react-icons/go";
+import { IoCheckmark } from "react-icons/io5";
 import { episodesLabel, type PokemonSeason } from "@/app/data/pokemonCatalog";
 
 type SeasonCarouselProps = {
@@ -22,6 +23,7 @@ const GAP = 16;
 const PEEK = 0;
 const STANDARD_CARD_WIDTH = 300;
 const STANDARD_CARD_HEIGHT = 360;
+const WATCHED_COOKIE_PREFIX = "pokewatch-watched-season";
 
 const getThumbnailCandidates = (seasonNumber: number) => [
   `/seasons/s${seasonNumber}.jpg`,
@@ -29,6 +31,49 @@ const getThumbnailCandidates = (seasonNumber: number) => [
   `/seasons/s${seasonNumber}.png`,
   `/seasons/s${seasonNumber}.webp`,
 ];
+
+const getCookieValue = (cookieName: string) => {
+  if (typeof document === "undefined") return null;
+
+  const target = `${cookieName}=`;
+  const parts = document.cookie.split(";");
+
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (trimmed.startsWith(target)) {
+      return trimmed.slice(target.length);
+    }
+  }
+
+  return null;
+};
+
+const getWatchedProgressForSeason = (season: PokemonSeason) => {
+  const cookieName = `${WATCHED_COOKIE_PREFIX}-${season.season}`;
+  const rawValue = getCookieValue(cookieName);
+  const totalEpisodes = season.episodes && season.episodes > 0 ? season.episodes : 24;
+
+  if (!rawValue || totalEpisodes <= 0) {
+    return 0;
+  }
+
+  try {
+    const parsed = JSON.parse(decodeURIComponent(rawValue)) as Record<string, boolean>;
+    const watchedCount = Object.values(parsed).filter(Boolean).length;
+    return Math.max(0, Math.min(100, Math.round((watchedCount / totalEpisodes) * 100)));
+  } catch {
+    return 0;
+  }
+};
+
+const buildProgressMap = (seasons: PokemonSeason[]) => {
+  const progress: Record<number, number> = {};
+  seasons.forEach((season) => {
+    progress[season.season] = getWatchedProgressForSeason(season);
+  });
+
+  return progress;
+};
 
 function SeasonThumbnail({ seasonNumber, title, arc, accent }: SeasonThumbnailProps) {
   const [thumbnailSrc, setThumbnailSrc] = useState<string | null>(null);
@@ -102,6 +147,9 @@ export default function SeasonCarousel({ seasons }: SeasonCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(baseIndex);
   const [withTransition, setWithTransition] = useState(true);
   const [transitionDuration, setTransitionDuration] = useState(420);
+  const [watchedProgressBySeason, setWatchedProgressBySeason] = useState<Record<number, number>>(() =>
+    buildProgressMap(seasons)
+  );
 
   const isCarouselEnabled = seasons.length > 4;
 
@@ -129,6 +177,20 @@ export default function SeasonCarousel({ seasons }: SeasonCarouselProps) {
       }
     };
   }, [isCarouselEnabled, baseIndex, seasons.length]);
+
+  useEffect(() => {
+    const loadProgress = () => {
+      setWatchedProgressBySeason(buildProgressMap(seasons));
+    };
+
+    window.addEventListener("focus", loadProgress);
+    window.addEventListener("storage", loadProgress);
+
+    return () => {
+      window.removeEventListener("focus", loadProgress);
+      window.removeEventListener("storage", loadProgress);
+    };
+  }, [seasons]);
 
   const cardWidth = STANDARD_CARD_WIDTH;
 
@@ -187,6 +249,12 @@ export default function SeasonCarousel({ seasons }: SeasonCarouselProps) {
             href={`/stagione/${season.season}`}
             className="group relative flex h-[360px] w-[300px] shrink-0 flex-col overflow-hidden rounded-md border border-white/10 bg-zinc-900 transition duration-300 hover:-translate-y-1 hover:border-white/25"
           >
+            {(watchedProgressBySeason[season.season] ?? 0) >= 100 ? (
+              <span className="absolute right-2 top-2 z-20 inline-flex h-13 w-13 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-black/30">
+                <IoCheckmark className="text-3xl" aria-hidden="true" />
+              </span>
+            ) : null}
+
             <SeasonThumbnail
               seasonNumber={season.season}
               title={season.title}
@@ -199,6 +267,18 @@ export default function SeasonCarousel({ seasons }: SeasonCarouselProps) {
                 <h3 className="line-clamp-2 text-base font-bold leading-snug">{season.title}</h3>
                 <p className="mt-2 line-clamp-3 text-sm text-white/70">{season.synopsis}</p>
               </div>
+
+              <div className="mt-3 space-y-2">
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-red-500 transition-all duration-300"
+                    style={{ width: `${watchedProgressBySeason[season.season] ?? 0}%` }}
+                  />
+                </div>
+
+                <p className="text-[11px] text-white/60">{watchedProgressBySeason[season.season] ?? 0}% visto</p>
+              </div>
+
               <p className="mt-3 text-xs text-white/60">
                 <span className="inline-flex items-center gap-1">
                   <span>{season.years}</span>
@@ -260,6 +340,12 @@ export default function SeasonCarousel({ seasons }: SeasonCarouselProps) {
               }}
               className="group relative flex shrink-0 flex-col overflow-hidden rounded-md border border-white/10 bg-zinc-900 transition duration-300 hover:-translate-y-1 hover:border-white/25"
             >
+              {(watchedProgressBySeason[season.season] ?? 0) >= 100 ? (
+                <span className="absolute right-2 top-2 z-20 inline-flex h-13 w-13 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-black/30">
+                  <IoCheckmark className="text-3xl" aria-hidden="true" />
+                </span>
+              ) : null}
+
               <SeasonThumbnail
                 seasonNumber={season.season}
                 title={season.title}
@@ -272,6 +358,18 @@ export default function SeasonCarousel({ seasons }: SeasonCarouselProps) {
                   <h3 className="line-clamp-2 text-base font-bold leading-snug">{season.title}</h3>
                   <p className="mt-2 line-clamp-3 text-sm text-white/70">{season.synopsis}</p>
                 </div>
+
+                <div className="mt-3 space-y-2">
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-red-500 transition-all duration-300"
+                      style={{ width: `${watchedProgressBySeason[season.season] ?? 0}%` }}
+                    />
+                  </div>
+
+                  <p className="text-[11px] text-white/60">{watchedProgressBySeason[season.season] ?? 0}% visto</p>
+                </div>
+
                 <p className="mt-3 text-xs text-white/60">
                   <span className="inline-flex items-center gap-1">
                     <span>{season.years}</span>
