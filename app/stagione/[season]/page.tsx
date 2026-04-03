@@ -17,6 +17,12 @@ type SeasonPageProps = {
   params: Promise<{ season: string }>;
 };
 
+export function generateStaticParams() {
+  return allSeasons.map((season) => ({
+    season: String(season.season),
+  }));
+}
+
 export default async function SeasonPage({ params }: SeasonPageProps) {
   const { season } = await params;
   const seasonNumber = Number(season);
