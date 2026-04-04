@@ -55,7 +55,7 @@ export default function Home() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,#2563eb55,transparent_40%)]" />
           <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent" />
 
-          <div className="mx-auto grid max-w-[1500px] px-4 py-20 sm:px-8 lg:grid-cols-[1.3fr_1fr]">
+          <div className="mx-auto grid max-w-[1500px] px-4 py-12 sm:py-20 sm:px-8 lg:grid-cols-[1.3fr_1fr]">
             <div className="relative z-10 max-w-2xl space-y-5">
               <p className="text-xs font-bold tracking-[0.25em] text-white/70">STAGIONE IN EVIDENZA</p>
               <h1 className="text-4xl font-black leading-tight sm:text-6xl">{featuredSeason.title}</h1>

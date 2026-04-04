@@ -22,6 +22,8 @@ const GAP = 16;
 const PEEK = 0;
 const STANDARD_CARD_WIDTH = 300;
 const STANDARD_CARD_HEIGHT = 360;
+const MOBILE_CARD_WIDTH = 170;
+const MOBILE_CARD_HEIGHT = 240;
 const WATCHED_COOKIE_PREFIX = "pokewatch-watched-season";
 
 const getThumbnailCandidates = (seasonNumber: number) => [
@@ -191,7 +193,28 @@ export default function SeasonCarousel({ seasons }: SeasonCarouselProps) {
     };
   }, [seasons]);
 
-  const cardWidth = STANDARD_CARD_WIDTH;
+  const [cardWidth, setCardWidth] = useState<number>(STANDARD_CARD_WIDTH);
+  const [cardHeight, setCardHeight] = useState<number>(STANDARD_CARD_HEIGHT);
+
+  useEffect(() => {
+    const updateSizes = () => {
+      const w = window.innerWidth;
+      if (w <= 420) {
+        setCardWidth(MOBILE_CARD_WIDTH);
+        setCardHeight(MOBILE_CARD_HEIGHT);
+      } else if (w <= 640) {
+        setCardWidth(220);
+        setCardHeight(300);
+      } else {
+        setCardWidth(STANDARD_CARD_WIDTH);
+        setCardHeight(STANDARD_CARD_HEIGHT);
+      }
+    };
+
+    updateSizes();
+    window.addEventListener("resize", updateSizes);
+    return () => window.removeEventListener("resize", updateSizes);
+  }, []);
 
   const step = cardWidth + GAP;
   const translateX = -(currentIndex * step) + PEEK;
@@ -246,7 +269,13 @@ export default function SeasonCarousel({ seasons }: SeasonCarouselProps) {
           <Link
             key={season.title}
             href={`/stagione/${season.season}`}
-            className="group relative flex h-[360px] w-[300px] shrink-0 flex-col overflow-hidden rounded-md border border-white/10 bg-zinc-900 transition duration-300 hover:-translate-y-1 hover:border-white/25"
+            style={{
+              width: `${cardWidth}px`,
+              minWidth: `${cardWidth}px`,
+              maxWidth: `${cardWidth}px`,
+              height: `${cardHeight}px`,
+            }}
+            className="group relative flex shrink-0 flex-col overflow-hidden rounded-md border border-white/10 bg-zinc-900 transition duration-300 hover:-translate-y-1 hover:border-white/25"
           >
             {(watchedProgressBySeason[season.season] ?? 0) >= 100 ? (
               <span className="absolute right-2 top-2 z-20 inline-flex h-13 w-13 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-black/30">
@@ -335,7 +364,7 @@ export default function SeasonCarousel({ seasons }: SeasonCarouselProps) {
                 width: `${cardWidth}px`,
                 minWidth: `${cardWidth}px`,
                 maxWidth: `${cardWidth}px`,
-                height: `${STANDARD_CARD_HEIGHT}px`,
+                height: `${cardHeight}px`,
               }}
               className="group relative flex shrink-0 flex-col overflow-hidden rounded-md border border-white/10 bg-zinc-900 transition duration-300 hover:-translate-y-1 hover:border-white/25"
             >
