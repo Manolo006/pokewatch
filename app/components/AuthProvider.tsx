@@ -71,13 +71,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error("Firebase non configurato");
     }
 
-    const isGitHubPages = window.location.hostname.endsWith("github.io");
-
-    if (isGitHubPages) {
-      await signInWithRedirect(auth, googleProvider);
-      return;
-    }
-
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (error) {
