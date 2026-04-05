@@ -3,7 +3,28 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { FirebaseError } from "firebase/app";
 import { useAuth } from "@/app/components/AuthProvider";
+
+function getGoogleAuthErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message === "Firebase non configurato") {
+    return "Firebase non configurato. Controlla le variabili ambiente della build.";
+  }
+
+  if (error instanceof FirebaseError) {
+    if (error.code === "auth/unauthorized-domain") {
+      return "Dominio non autorizzato in Firebase. Aggiungi questo dominio in Authentication → Settings → Authorized domains.";
+    }
+
+    if (error.code === "auth/operation-not-allowed") {
+      return "Provider Google non abilitato in Firebase Authentication.";
+    }
+
+    return `Registrazione con Google non riuscita (${error.code}).`;
+  }
+
+  return "Registrazione con Google non riuscita. Riprova.";
+}
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -45,11 +66,7 @@ export default function RegisterPage() {
       router.push("/");
     } catch (error) {
       console.error("Google register error:", error);
-      setErrorMessage(
-        error instanceof Error && error.message === "Firebase non configurato"
-          ? "Firebase non configurato. Controlla le variabili ambiente della build."
-          : "Registrazione con Google non riuscita. Riprova."
-      );
+      setErrorMessage(getGoogleAuthErrorMessage(error));
     } finally {
       setLoading(false);
     }

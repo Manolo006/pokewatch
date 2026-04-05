@@ -12,11 +12,13 @@ import {
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  signInWithRedirect,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
   type User,
 } from "firebase/auth";
+import { FirebaseError } from "firebase/app";
 import { auth, googleProvider, isFirebaseConfigured } from "@/app/lib/firebase";
 
 type AuthContextValue = {
@@ -69,7 +71,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error("Firebase non configurato");
     }
 
-    await signInWithPopup(auth, googleProvider);
+    const isGitHubPages = window.location.hostname.endsWith("github.io");
+
+    if (isGitHubPages) {
+      await signInWithRedirect(auth, googleProvider);
+      return;
+    }
+
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      if (
+        error instanceof FirebaseError &&
+        (error.code === "auth/popup-blocked" ||
+          error.code === "auth/cancelled-popup-request" ||
+          error.code === "auth/popup-closed-by-user" ||
+          error.code === "auth/internal-error")
+      ) {
+        await signInWithRedirect(auth, googleProvider);
+        return;
+      }
+
+      throw error;
+    }
   }, []);
 
   const logout = useCallback(async () => {
