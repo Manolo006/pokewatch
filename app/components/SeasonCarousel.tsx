@@ -6,9 +6,20 @@ import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { GoDotFill } from "react-icons/go";
 import { IoCheckmark } from "react-icons/io5";
 import { episodesLabel, type PokemonSeason } from "@/app/data/pokemonCatalog";
+import { ref, get, runTransaction } from "firebase/database";
+import { db } from "@/app/lib/firebase";
+import { useAuth } from "@/app/components/AuthProvider";
 
 type SeasonCarouselProps = {
   seasons: PokemonSeason[];
+  enableTrendVoting?: boolean;
+};
+
+type CommunitySeasonTrendStats = {
+  clicks: number;
+  totalClicks: number;
+  share: number;
+  consensus: "tendenza" | "normale";
 };
 
 type SeasonThumbnailProps = {
@@ -24,7 +35,7 @@ const STANDARD_CARD_WIDTH = 300;
 const STANDARD_CARD_HEIGHT = 360;
 const MOBILE_CARD_WIDTH = 170;
 const MOBILE_CARD_HEIGHT = 240;
-const WATCHED_COOKIE_PREFIX = "pokewatch-watched-season";
+const WATCHED_STORAGE_PREFIX = "pokewatch-watched-season";
 
 const getThumbnailCandidates = (seasonNumber: number) => [
   `./seasons/s${seasonNumber}.jpg`,
@@ -33,25 +44,11 @@ const getThumbnailCandidates = (seasonNumber: number) => [
   `./seasons/s${seasonNumber}.webp`,
 ];
 
-const getCookieValue = (cookieName: string) => {
-  if (typeof document === "undefined") return null;
-
-  const target = `${cookieName}=`;
-  const parts = document.cookie.split(";");
-
-  for (const part of parts) {
-    const trimmed = part.trim();
-    if (trimmed.startsWith(target)) {
-      return trimmed.slice(target.length);
-    }
-  }
-
-  return null;
-};
-
 const getWatchedProgressForSeason = (season: PokemonSeason) => {
-  const cookieName = `${WATCHED_COOKIE_PREFIX}-${season.season}`;
-  const rawValue = getCookieValue(cookieName);
+  if (typeof window === "undefined") return 0;
+
+  const storageKey = `${WATCHED_STORAGE_PREFIX}-${season.season}`;
+  const rawValue = window.localStorage.getItem(storageKey);
   const totalEpisodes = season.episodes && season.episodes > 0 ? season.episodes : 24;
 
   if (!rawValue || totalEpisodes <= 0) {
@@ -59,12 +56,34 @@ const getWatchedProgressForSeason = (season: PokemonSeason) => {
   }
 
   try {
-    const parsed = JSON.parse(decodeURIComponent(rawValue)) as Record<string, boolean>;
+    const parsed = JSON.parse(rawValue) as Record<string, boolean>;
     const watchedCount = Object.values(parsed).filter(Boolean).length;
     return Math.max(0, Math.min(100, Math.round((watchedCount / totalEpisodes) * 100)));
   } catch {
     return 0;
   }
+};
+
+const normalizeWatchedRecord = (value: unknown): Record<number, boolean> => {
+  if (!value || typeof value !== "object") return {};
+
+  const result: Record<number, boolean> = {};
+
+  Object.entries(value as Record<string, unknown>).forEach(([key, entry]) => {
+    const episodeNumber = Number(key);
+    if (!Number.isInteger(episodeNumber)) return;
+    result[episodeNumber] = Boolean(entry);
+  });
+
+  return result;
+};
+
+const getProgressFromWatchedRecord = (season: PokemonSeason, watched: Record<number, boolean>) => {
+  const totalEpisodes = season.episodes && season.episodes > 0 ? season.episodes : 24;
+  if (totalEpisodes <= 0) return 0;
+
+  const watchedCount = Object.values(watched).filter(Boolean).length;
+  return Math.max(0, Math.min(100, Math.round((watchedCount / totalEpisodes) * 100)));
 };
 
 const buildProgressMap = (seasons: PokemonSeason[]) => {
@@ -74,6 +93,48 @@ const buildProgressMap = (seasons: PokemonSeason[]) => {
   });
 
   return progress;
+};
+
+const buildSeasonClickMap = (value: unknown): Record<number, number> => {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+
+  const result: Record<number, number> = {};
+
+  Object.entries(value as Record<string, unknown>).forEach(([seasonKey, seasonValue]) => {
+    const seasonNumber = Number(seasonKey);
+    if (!Number.isInteger(seasonNumber)) return;
+    const clicks = Number(seasonValue);
+    result[seasonNumber] = Number.isFinite(clicks) && clicks > 0 ? Math.floor(clicks) : 0;
+  });
+
+  return result;
+};
+
+const buildCommunityTrendStats = (
+  seasons: PokemonSeason[],
+  clickMap: Record<number, number>
+): Record<number, CommunitySeasonTrendStats> => {
+  const totalClicks = seasons.reduce((acc, season) => acc + (clickMap[season.season] ?? 0), 0);
+  const maxClicks = seasons.reduce((acc, season) => Math.max(acc, clickMap[season.season] ?? 0), 0);
+
+  const result: Record<number, CommunitySeasonTrendStats> = {};
+
+  seasons.forEach((season) => {
+    const clicks = clickMap[season.season] ?? 0;
+    const share = totalClicks > 0 ? Math.round((clicks / totalClicks) * 100) : 0;
+    const consensus: "tendenza" | "normale" = clicks > 0 && clicks >= maxClicks ? "tendenza" : "normale";
+
+    result[season.season] = {
+      clicks,
+      totalClicks,
+      share,
+      consensus,
+    };
+  });
+
+  return result;
 };
 
 function SeasonThumbnail({ seasonNumber, title, arc, accent }: SeasonThumbnailProps) {
@@ -139,7 +200,8 @@ function SeasonThumbnail({ seasonNumber, title, arc, accent }: SeasonThumbnailPr
   );
 }
 
-export default function SeasonCarousel({ seasons }: SeasonCarouselProps) {
+export default function SeasonCarousel({ seasons, enableTrendVoting = false }: SeasonCarouselProps) {
+  const { user } = useAuth();
   const viewportRef = useRef<HTMLDivElement>(null);
   const lastClickRef = useRef(0);
   const totalItems = seasons.length;
@@ -151,6 +213,7 @@ export default function SeasonCarousel({ seasons }: SeasonCarouselProps) {
   const [watchedProgressBySeason, setWatchedProgressBySeason] = useState<Record<number, number>>(() =>
     buildProgressMap(seasons)
   );
+  const [seasonClickBySeason, setSeasonClickBySeason] = useState<Record<number, number>>({});
 
   const isCarouselEnabled = seasons.length > 4;
 
@@ -180,18 +243,94 @@ export default function SeasonCarousel({ seasons }: SeasonCarouselProps) {
   }, [isCarouselEnabled, baseIndex, seasons.length]);
 
   useEffect(() => {
+    const dbInstance = db;
+
     const loadProgress = () => {
-      setWatchedProgressBySeason(buildProgressMap(seasons));
+      if (!user || !dbInstance) {
+        setWatchedProgressBySeason(buildProgressMap(seasons));
+        return;
+      }
+
+      void Promise.all(
+        seasons.map(async (season) => {
+          try {
+            const watchedRef = ref(dbInstance, `users/${user.uid}/watchedBySeason/${season.season}`);
+            const snapshot = await get(watchedRef);
+            const watchedRecord = normalizeWatchedRecord(snapshot.val());
+            return [season.season, getProgressFromWatchedRecord(season, watchedRecord)] as const;
+          } catch {
+            return [season.season, 0] as const;
+          }
+        })
+      ).then((entries) => {
+        const nextMap: Record<number, number> = {};
+        entries.forEach(([seasonNumber, progress]) => {
+          nextMap[seasonNumber] = progress;
+        });
+        setWatchedProgressBySeason(nextMap);
+      });
     };
 
+    loadProgress();
     window.addEventListener("focus", loadProgress);
-    window.addEventListener("storage", loadProgress);
+    if (!user || !dbInstance) {
+      window.addEventListener("storage", loadProgress);
+    }
 
     return () => {
       window.removeEventListener("focus", loadProgress);
-      window.removeEventListener("storage", loadProgress);
+      if (!user || !dbInstance) {
+        window.removeEventListener("storage", loadProgress);
+      }
     };
-  }, [seasons]);
+  }, [seasons, user]);
+
+  useEffect(() => {
+    if (!enableTrendVoting) return;
+
+    const dbInstance = db;
+
+    const loadSeasonClickCounts = async () => {
+      if (!dbInstance) {
+        setSeasonClickBySeason({});
+        return;
+      }
+
+      try {
+        const snapshot = await get(ref(dbInstance, "community/seasonOpenCounts"));
+        setSeasonClickBySeason(buildSeasonClickMap(snapshot.val()));
+      } catch {
+        setSeasonClickBySeason({});
+      }
+    };
+
+    void loadSeasonClickCounts();
+    window.addEventListener("focus", loadSeasonClickCounts);
+
+    return () => {
+      window.removeEventListener("focus", loadSeasonClickCounts);
+    };
+  }, [enableTrendVoting, user]);
+
+  const communityTrendBySeason = useMemo(
+    () => buildCommunityTrendStats(seasons, seasonClickBySeason),
+    [seasons, seasonClickBySeason]
+  );
+
+  const trackSeasonOpen = (seasonNumber: number) => {
+    if (!enableTrendVoting || !db) return;
+
+    const dbInstance = db;
+    setSeasonClickBySeason((prev) => ({
+      ...prev,
+      [seasonNumber]: (prev[seasonNumber] ?? 0) + 1,
+    }));
+
+    void runTransaction(ref(dbInstance, `community/seasonOpenCounts/${seasonNumber}`), (current) => {
+      const count = Number(current);
+      return Number.isFinite(count) && count >= 0 ? count + 1 : 1;
+    });
+  };
 
   const [cardWidth, setCardWidth] = useState<number>(STANDARD_CARD_WIDTH);
   const [cardHeight, setCardHeight] = useState<number>(STANDARD_CARD_HEIGHT);
@@ -307,6 +446,27 @@ export default function SeasonCarousel({ seasons }: SeasonCarouselProps) {
                 <p className="text-[11px] text-white/60">{watchedProgressBySeason[season.season] ?? 0}% visto</p>
               </div>
 
+              {enableTrendVoting ? (
+                <div className="mt-2 space-y-2">
+                  <p
+                    className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                      communityTrendBySeason[season.season]?.consensus === "tendenza"
+                        ? "border-fuchsia-400/30 bg-fuchsia-500/20 text-fuchsia-100"
+                        : "border-slate-400/30 bg-slate-500/20 text-slate-100"
+                    }`}
+                  >
+                    Trend automatico: {communityTrendBySeason[season.season]?.consensus === "tendenza" ? "Di tendenza" : "Normale"}
+                  </p>
+
+                  <p className="text-[10px] text-white/75">
+                    {communityTrendBySeason[season.season]?.clicks ?? 0} aperture
+                    {communityTrendBySeason[season.season]?.totalClicks
+                      ? ` · ${communityTrendBySeason[season.season].share}% del totale`
+                      : ""}
+                  </p>
+                </div>
+              ) : null}
+
               <p className="mt-3 text-xs text-white/60">
                 <span className="inline-flex items-center gap-1">
                   <span>{season.years}</span>
@@ -360,6 +520,9 @@ export default function SeasonCarousel({ seasons }: SeasonCarouselProps) {
             <Link
               key={`${season.title}-${index}`}
               href={`/stagione/${season.season}`}
+              onClick={() => {
+                trackSeasonOpen(season.season);
+              }}
               style={{
                 width: `${cardWidth}px`,
                 minWidth: `${cardWidth}px`,
@@ -397,6 +560,27 @@ export default function SeasonCarousel({ seasons }: SeasonCarouselProps) {
 
                   <p className="text-[11px] text-white/60">{watchedProgressBySeason[season.season] ?? 0}% visto</p>
                 </div>
+
+                {enableTrendVoting ? (
+                  <div className="mt-2 space-y-2">
+                    <p
+                      className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                        communityTrendBySeason[season.season]?.consensus === "tendenza"
+                          ? "border-fuchsia-400/30 bg-fuchsia-500/20 text-fuchsia-100"
+                          : "border-slate-400/30 bg-slate-500/20 text-slate-100"
+                      }`}
+                    >
+                      Trend automatico: {communityTrendBySeason[season.season]?.consensus === "tendenza" ? "Di tendenza" : "Normale"}
+                    </p>
+
+                    <p className="text-[10px] text-white/75">
+                      {communityTrendBySeason[season.season]?.clicks ?? 0} aperture
+                      {communityTrendBySeason[season.season]?.totalClicks
+                        ? ` · ${communityTrendBySeason[season.season].share}% del totale`
+                        : ""}
+                    </p>
+                  </div>
+                ) : null}
 
                 <p className="mt-3 text-xs text-white/60">
                   <span className="inline-flex items-center gap-1">

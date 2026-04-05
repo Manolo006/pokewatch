@@ -1,5 +1,6 @@
 import SeasonCarousel from "./components/SeasonCarousel";
 import AuthHeaderActions from "./components/AuthHeaderActions";
+import ContinueWatchingButton from "./components/ContinueWatchingButton";
 import { GoDotFill } from "react-icons/go";
 import { IoAdd, IoPlay } from "react-icons/io5";
 import { episodesLabel, latestSeason, seasonRows, type PokemonSeason } from "./data/pokemonCatalog";
@@ -79,6 +80,7 @@ export default function Home() {
                   <IoAdd className="text-base" aria-hidden="true" />
                   <span>La mia lista</span>
                 </button>
+                <ContinueWatchingButton />
               </div>
             </div>
           </div>
@@ -89,7 +91,7 @@ export default function Home() {
             <div key={row.rowTitle} className="space-y-4">
               <h2 className="text-xl font-bold sm:text-2xl">{row.rowTitle}</h2>
 
-              <SeasonCarousel seasons={row.seasons} />
+              <SeasonCarousel seasons={row.seasons} enableTrendVoting={row.rowTitle === "Trending"} />
             </div>
           ))}
         </section>

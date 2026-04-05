@@ -32,11 +32,11 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(isFirebaseConfigured);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isFirebaseConfigured || !auth) {
-      setLoading(false);
+      queueMicrotask(() => setLoading(false));
       return;
     }
 

@@ -108,7 +108,7 @@ export default async function SeasonPage({ params }: SeasonPageProps) {
 
             <div className="flex flex-wrap gap-3 pt-2">
               <Link
-                href={`./stagione/${previousSeason.season}`}
+                href={`/stagione/${previousSeason.season}`}
                 className="inline-flex items-center gap-2 rounded bg-white/10 px-4 py-2 text-sm font-semibold transition hover:bg-white/20"
                 aria-label={`Vai alla stagione precedente: ${previousSeason.title}`}
               >
@@ -117,7 +117,7 @@ export default async function SeasonPage({ params }: SeasonPageProps) {
               </Link>
 
               <Link
-                href={`./stagione/${nextSeason.season}`}
+                href={`/stagione/${nextSeason.season}`}
                 className="inline-flex items-center gap-2 rounded bg-white/10 px-4 py-2 text-sm font-semibold transition hover:bg-white/20"
                 aria-label={`Vai alla stagione successiva: ${nextSeason.title}`}
               >
@@ -130,6 +130,26 @@ export default async function SeasonPage({ params }: SeasonPageProps) {
 
         <section className="mt-8 space-y-4 sm:mt-10">
           <SeasonEpisodesList seasonNumber={selectedSeason.season} episodes={episodes} />
+
+          <div className="mt-6 flex flex-wrap gap-3 border-t border-white/10 pt-6">
+            <Link
+              href={`/stagione/${previousSeason.season}`}
+              className="inline-flex items-center gap-2 rounded bg-white/10 px-4 py-2 text-sm font-semibold transition hover:bg-white/20"
+              aria-label={`Vai alla stagione precedente: ${previousSeason.title}`}
+            >
+              <IoChevronBack aria-hidden="true" />
+              Stagione precedente
+            </Link>
+
+            <Link
+              href={`/stagione/${nextSeason.season}`}
+              className="inline-flex items-center gap-2 rounded bg-white/10 px-4 py-2 text-sm font-semibold transition hover:bg-white/20"
+              aria-label={`Vai alla stagione successiva: ${nextSeason.title}`}
+            >
+              Stagione successiva
+              <IoChevronForward aria-hidden="true" />
+            </Link>
+          </div>
         </section>
       </main>
     </div>

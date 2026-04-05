@@ -1,10 +1,27 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import NextImage from "next/image";
 import type { PokemonEpisode } from "@/app/data/pokemonCatalog";
+import { ref, get, set } from "firebase/database";
+import { db } from "@/app/lib/firebase";
+import { useAuth } from "@/app/components/AuthProvider";
 
 type EpisodeFillerType = "non-filler" | "filler" | "misto";
+type EpisodeTrendType = "tendenza" | "normale";
+type CommunityEpisodeStats = {
+  "non-filler": number;
+  filler: number;
+  misto: number;
+  total: number;
+  consensus: EpisodeFillerType | null;
+};
+type CommunityTrendStats = {
+  tendenza: number;
+  normale: number;
+  total: number;
+  consensus: EpisodeTrendType | null;
+};
 
 type SeasonEpisodesListProps = {
   seasonNumber: number;
@@ -17,23 +34,29 @@ const fillerTypeLabels: Record<EpisodeFillerType, string> = {
   misto: "Misto",
 };
 
+const trendTypeLabels: Record<EpisodeTrendType, string> = {
+  tendenza: "Di tendenza",
+  normale: "Normale",
+};
+
 const fillerTypeBadgeClasses: Record<EpisodeFillerType, string> = {
   "non-filler": "bg-emerald-500/20 text-emerald-200 border-emerald-400/30",
   filler: "bg-rose-500/20 text-rose-200 border-rose-400/30",
   misto: "bg-amber-500/20 text-amber-100 border-amber-400/30",
 };
 
-const COOKIE_PREFIX = "pokewatch-filler-season";
-const WATCHED_COOKIE_PREFIX = "pokewatch-watched-season";
+const FILLER_STORAGE_PREFIX = "pokewatch-filler-season";
+const WATCHED_STORAGE_PREFIX = "pokewatch-watched-season";
+const LAST_WATCHED_STORAGE_KEY = "pokewatch-last-watched";
 
-const getCookieName = (seasonNumber: number) => `${COOKIE_PREFIX}-${seasonNumber}`;
-const getWatchedCookieName = (seasonNumber: number) => `${WATCHED_COOKIE_PREFIX}-${seasonNumber}`;
+const getFillerStorageKey = (seasonNumber: number) => `${FILLER_STORAGE_PREFIX}-${seasonNumber}`;
+const getWatchedStorageKey = (seasonNumber: number) => `${WATCHED_STORAGE_PREFIX}-${seasonNumber}`;
 
-const parseFillerCookie = (rawValue: string | null): Record<number, EpisodeFillerType> => {
+const parseFillerStoredValue = (rawValue: string | null): Record<number, EpisodeFillerType> => {
   if (!rawValue) return {};
 
   try {
-    const parsed = JSON.parse(decodeURIComponent(rawValue)) as Record<string, string>;
+    const parsed = JSON.parse(rawValue) as Record<string, string>;
     const result: Record<number, EpisodeFillerType> = {};
 
     Object.entries(parsed).forEach(([key, value]) => {
@@ -51,27 +74,11 @@ const parseFillerCookie = (rawValue: string | null): Record<number, EpisodeFille
   }
 };
 
-const getCookieValue = (cookieName: string) => {
-  if (typeof document === "undefined") return null;
-
-  const target = `${cookieName}=`;
-  const parts = document.cookie.split(";");
-
-  for (const part of parts) {
-    const trimmed = part.trim();
-    if (trimmed.startsWith(target)) {
-      return trimmed.slice(target.length);
-    }
-  }
-
-  return null;
-};
-
-const parseWatchedCookie = (rawValue: string | null): Record<number, boolean> => {
+const parseWatchedStoredValue = (rawValue: string | null): Record<number, boolean> => {
   if (!rawValue) return {};
 
   try {
-    const parsed = JSON.parse(decodeURIComponent(rawValue)) as Record<string, boolean>;
+    const parsed = JSON.parse(rawValue) as Record<string, boolean>;
     const result: Record<number, boolean> = {};
 
     Object.entries(parsed).forEach(([key, value]) => {
@@ -86,31 +93,267 @@ const parseWatchedCookie = (rawValue: string | null): Record<number, boolean> =>
   }
 };
 
+const normalizeWatchedRecord = (value: unknown): Record<number, boolean> => {
+  if (!value || typeof value !== "object") return {};
+
+  const result: Record<number, boolean> = {};
+
+  Object.entries(value as Record<string, unknown>).forEach(([key, entry]) => {
+    const episodeNumber = Number(key);
+    if (!Number.isInteger(episodeNumber)) return;
+    result[episodeNumber] = Boolean(entry);
+  });
+
+  return result;
+};
+
+const buildCommunityStats = (value: unknown): Record<number, CommunityEpisodeStats> => {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+
+  const byEpisode: Record<number, CommunityEpisodeStats> = {};
+
+  Object.entries(value as Record<string, unknown>).forEach(([episodeKey, episodeValue]) => {
+    const episodeNumber = Number(episodeKey);
+    if (!Number.isInteger(episodeNumber) || !episodeValue || typeof episodeValue !== "object") {
+      return;
+    }
+
+    const votesValue = (episodeValue as Record<string, unknown>).votes;
+    if (!votesValue || typeof votesValue !== "object") {
+      byEpisode[episodeNumber] = {
+        "non-filler": 0,
+        filler: 0,
+        misto: 0,
+        total: 0,
+        consensus: null,
+      };
+      return;
+    }
+
+    const stats: CommunityEpisodeStats = {
+      "non-filler": 0,
+      filler: 0,
+      misto: 0,
+      total: 0,
+      consensus: null,
+    };
+
+    Object.values(votesValue as Record<string, unknown>).forEach((vote) => {
+      if (vote === "non-filler" || vote === "filler" || vote === "misto") {
+        stats[vote] += 1;
+        stats.total += 1;
+      }
+    });
+
+    let consensus: EpisodeFillerType | null = null;
+    let maxVotes = 0;
+    (["non-filler", "filler", "misto"] as EpisodeFillerType[]).forEach((type) => {
+      if (stats[type] > maxVotes) {
+        maxVotes = stats[type];
+        consensus = type;
+      }
+    });
+
+    stats.consensus = stats.total > 0 ? consensus : null;
+    byEpisode[episodeNumber] = stats;
+  });
+
+  return byEpisode;
+};
+
+const buildCommunityTrendStats = (value: unknown): Record<number, CommunityTrendStats> => {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+
+  const byEpisode: Record<number, CommunityTrendStats> = {};
+
+  Object.entries(value as Record<string, unknown>).forEach(([episodeKey, episodeValue]) => {
+    const episodeNumber = Number(episodeKey);
+    if (!Number.isInteger(episodeNumber) || !episodeValue || typeof episodeValue !== "object") {
+      return;
+    }
+
+    const votesValue = (episodeValue as Record<string, unknown>).votes;
+    if (!votesValue || typeof votesValue !== "object") {
+      byEpisode[episodeNumber] = {
+        tendenza: 0,
+        normale: 0,
+        total: 0,
+        consensus: null,
+      };
+      return;
+    }
+
+    const stats: CommunityTrendStats = {
+      tendenza: 0,
+      normale: 0,
+      total: 0,
+      consensus: null,
+    };
+
+    Object.values(votesValue as Record<string, unknown>).forEach((vote) => {
+      if (vote === "tendenza" || vote === "normale") {
+        stats[vote] += 1;
+        stats.total += 1;
+      }
+    });
+
+    stats.consensus = stats.total > 0 ? (stats.tendenza >= stats.normale ? "tendenza" : "normale") : null;
+    byEpisode[episodeNumber] = stats;
+  });
+
+  return byEpisode;
+};
+
 export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpisodesListProps) {
-  const [fillerByEpisode, setFillerByEpisode] = useState<Record<number, EpisodeFillerType>>(() => {
-    const cookieName = getCookieName(seasonNumber);
-    const storedValue = getCookieValue(cookieName);
-    return parseFillerCookie(storedValue);
-  });
-  const [watchedByEpisode, setWatchedByEpisode] = useState<Record<number, boolean>>(() => {
-    const cookieName = getWatchedCookieName(seasonNumber);
-    const storedValue = getCookieValue(cookieName);
-    return parseWatchedCookie(storedValue);
-  });
+  const { user } = useAuth();
+  const [fillerByEpisode, setFillerByEpisode] = useState<Record<number, EpisodeFillerType>>({});
+  const [watchedByEpisode, setWatchedByEpisode] = useState<Record<number, boolean>>({});
+  const [communityByEpisode, setCommunityByEpisode] = useState<Record<number, CommunityEpisodeStats>>({});
+  const [communityTrendByEpisode, setCommunityTrendByEpisode] = useState<Record<number, CommunityTrendStats>>({});
+  const isFillerLoadedRef = useRef(false);
+  const canPersistWatchedRef = useRef(false);
+
+  const loadCommunityVotes = useCallback(async () => {
+    if (!db) {
+      setCommunityByEpisode({});
+      return;
+    }
+
+    try {
+      const communityRef = ref(db, `community/fillerVotesBySeason/${seasonNumber}`);
+      const snapshot = await get(communityRef);
+      const raw = snapshot.val();
+      setCommunityByEpisode(buildCommunityStats(raw));
+
+      if (user && raw && typeof raw === "object") {
+        const userSelections: Record<number, EpisodeFillerType> = {};
+
+        Object.entries(raw as Record<string, unknown>).forEach(([episodeKey, episodeValue]) => {
+          const episodeNumber = Number(episodeKey);
+          if (!Number.isInteger(episodeNumber) || !episodeValue || typeof episodeValue !== "object") return;
+
+          const votesValue = (episodeValue as Record<string, unknown>).votes;
+          if (!votesValue || typeof votesValue !== "object") return;
+
+          const userVote = (votesValue as Record<string, unknown>)[user.uid];
+          if (userVote === "non-filler" || userVote === "filler" || userVote === "misto") {
+            userSelections[episodeNumber] = userVote;
+          }
+        });
+
+        if (Object.keys(userSelections).length > 0) {
+          setFillerByEpisode((prev) => ({ ...prev, ...userSelections }));
+        }
+      }
+    } catch {
+      setCommunityByEpisode({});
+    }
+  }, [seasonNumber, user]);
+
+  const loadCommunityTrendVotes = useCallback(async () => {
+    if (!db) {
+      setCommunityTrendByEpisode({});
+      return;
+    }
+
+    try {
+      const communityRef = ref(db, `community/trendVotesBySeason/${seasonNumber}`);
+      const snapshot = await get(communityRef);
+      const raw = snapshot.val();
+      setCommunityTrendByEpisode(buildCommunityTrendStats(raw));
+    } catch {
+      setCommunityTrendByEpisode({});
+    }
+  }, [seasonNumber]);
 
   useEffect(() => {
-    const cookieName = getCookieName(seasonNumber);
-    const serialized = encodeURIComponent(JSON.stringify(fillerByEpisode));
+    isFillerLoadedRef.current = false;
 
-    document.cookie = `${cookieName}=${serialized}; path=/; max-age=31536000; samesite=lax`;
+    if (typeof window === "undefined") return;
+
+    const storageKey = getFillerStorageKey(seasonNumber);
+    const storedValue = window.localStorage.getItem(storageKey);
+    setFillerByEpisode(parseFillerStoredValue(storedValue));
+    isFillerLoadedRef.current = true;
+  }, [seasonNumber]);
+
+  useEffect(() => {
+    if (!isFillerLoadedRef.current || typeof window === "undefined") return;
+
+    const storageKey = getFillerStorageKey(seasonNumber);
+    window.localStorage.setItem(storageKey, JSON.stringify(fillerByEpisode));
   }, [seasonNumber, fillerByEpisode]);
 
   useEffect(() => {
-    const cookieName = getWatchedCookieName(seasonNumber);
-    const serialized = encodeURIComponent(JSON.stringify(watchedByEpisode));
+    void loadCommunityVotes();
+  }, [loadCommunityVotes]);
 
-    document.cookie = `${cookieName}=${serialized}; path=/; max-age=31536000; samesite=lax`;
-  }, [seasonNumber, watchedByEpisode]);
+  useEffect(() => {
+    void loadCommunityTrendVotes();
+  }, [loadCommunityTrendVotes]);
+
+  useEffect(() => {
+    let isActive = true;
+    canPersistWatchedRef.current = false;
+
+    const loadWatchedState = async () => {
+      if (!user || !db) {
+        if (typeof window === "undefined") return;
+        const storageKey = getWatchedStorageKey(seasonNumber);
+        const storedValue = window.localStorage.getItem(storageKey);
+        if (isActive) {
+          setWatchedByEpisode(parseWatchedStoredValue(storedValue));
+          canPersistWatchedRef.current = true;
+        }
+        return;
+      }
+
+      const watchedRef = ref(db, `users/${user.uid}/watchedBySeason/${seasonNumber}`);
+
+      try {
+        const snapshot = await get(watchedRef);
+        if (isActive) {
+          setWatchedByEpisode(normalizeWatchedRecord(snapshot.val()));
+        }
+      } catch {
+        if (!isActive) return;
+        if (typeof window === "undefined") return;
+        const storageKey = getWatchedStorageKey(seasonNumber);
+        const storedValue = window.localStorage.getItem(storageKey);
+        setWatchedByEpisode(parseWatchedStoredValue(storedValue));
+      } finally {
+        if (isActive) {
+          canPersistWatchedRef.current = true;
+        }
+      }
+    };
+
+    void loadWatchedState();
+
+    return () => {
+      isActive = false;
+    };
+  }, [seasonNumber, user]);
+
+  useEffect(() => {
+    if (!canPersistWatchedRef.current || typeof window === "undefined") return;
+
+    if (!user || !db) {
+      const storageKey = getWatchedStorageKey(seasonNumber);
+      window.localStorage.setItem(storageKey, JSON.stringify(watchedByEpisode));
+      return;
+    }
+
+    const watchedRef = ref(db, `users/${user.uid}/watchedBySeason/${seasonNumber}`);
+    void set(watchedRef, watchedByEpisode).catch(() => {
+      const storageKey = getWatchedStorageKey(seasonNumber);
+      window.localStorage.setItem(storageKey, JSON.stringify(watchedByEpisode));
+    });
+  }, [seasonNumber, watchedByEpisode, user]);
 
   const stats = useMemo(() => {
     const initial = {
@@ -142,6 +385,41 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
   );
 
   const completionPercentage = episodes.length > 0 ? Math.round((watchedCount / episodes.length) * 100) : 0;
+
+  const voteEpisodeType = (episodeNumber: number, type: EpisodeFillerType) => {
+    setFillerByEpisode((prev) => ({ ...prev, [episodeNumber]: type }));
+
+    if (!user || !db) return;
+
+    const voteRef = ref(db, `community/fillerVotesBySeason/${seasonNumber}/${episodeNumber}/votes/${user.uid}`);
+    void set(voteRef, type).then(() => {
+      void loadCommunityVotes();
+    });
+  };
+
+  const markEpisodeAsWatched = (episodeNumber: number) => {
+    setWatchedByEpisode((prev) => ({ ...prev, [episodeNumber]: true }));
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(
+        LAST_WATCHED_STORAGE_KEY,
+        JSON.stringify({
+          seasonNumber,
+          episodeNumber,
+          updatedAt: Date.now(),
+        })
+      );
+    }
+
+    if (user && db) {
+      const lastWatchedRef = ref(db, `users/${user.uid}/lastWatched`);
+      void set(lastWatchedRef, {
+        seasonNumber,
+        episodeNumber,
+        updatedAt: Date.now(),
+      });
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -180,10 +458,21 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
       {episodes.map((episode) => {
         const selectedType = fillerByEpisode[episode.number];
         const isWatched = Boolean(watchedByEpisode[episode.number]);
+        const community = communityByEpisode[episode.number];
+        const communityTrend = communityTrendByEpisode[episode.number];
+        const communityPercent =
+          community && community.consensus && community.total > 0
+            ? Math.round((community[community.consensus] / community.total) * 100)
+            : 0;
+        const communityTrendPercent =
+          communityTrend && communityTrend.consensus && communityTrend.total > 0
+            ? Math.round((communityTrend[communityTrend.consensus] / communityTrend.total) * 100)
+            : 0;
 
         return (
           <article
             key={episode.number}
+            id={`episodio-${episode.number}`}
             className={`rounded-lg border p-4 transition-colors ${
               isWatched
                 ? "border-blue-400/40 bg-blue-900/35"
@@ -231,7 +520,7 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
                           key={`${episode.number}-${type}`}
                           type="button"
                           onClick={() => {
-                            setFillerByEpisode((prev) => ({ ...prev, [episode.number]: type }));
+                            voteEpisodeType(episode.number, type);
                           }}
                           className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
                             isActive
@@ -257,6 +546,21 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
                   >
                     {selectedType ? fillerTypeLabels[selectedType] : "Non classificato"}
                   </span>
+
+                  <span className="rounded-full border border-sky-400/30 bg-sky-500/15 px-2 py-0.5 text-[11px] font-semibold text-sky-100">
+                    Community: {community?.consensus ? fillerTypeLabels[community.consensus] : "N/D"}
+                    {community?.consensus ? ` · ${communityPercent}%` : ""}
+                    {community ? ` (${community.total} voti)` : ""}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-white/70">Trend episodio automatico:</span>
+                  <span className="rounded-full border border-fuchsia-400/30 bg-fuchsia-500/15 px-2 py-0.5 text-[11px] font-semibold text-fuchsia-100">
+                    Community trend: {communityTrend?.consensus ? trendTypeLabels[communityTrend.consensus] : "N/D"}
+                    {communityTrend?.consensus ? ` · ${communityTrendPercent}%` : ""}
+                    {communityTrend ? ` (${communityTrend.total} voti)` : ""}
+                  </span>
                 </div>
 
                 {episode.youtubeUrl ? (
@@ -265,7 +569,7 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
                     target="_blank"
                     rel="noreferrer"
                     onClick={() => {
-                      setWatchedByEpisode((prev) => ({ ...prev, [episode.number]: true }));
+                      markEpisodeAsWatched(episode.number);
                     }}
                     className="inline-flex pt-1 text-xs font-semibold text-red-300 transition hover:text-red-200"
                   >
