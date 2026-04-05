@@ -1,4 +1,5 @@
 import SeasonCarousel from "./components/SeasonCarousel";
+import AuthHeaderActions from "./components/AuthHeaderActions";
 import { GoDotFill } from "react-icons/go";
 import { IoAdd, IoPlay } from "react-icons/io5";
 import { episodesLabel, latestSeason, seasonRows, type PokemonSeason } from "./data/pokemonCatalog";
@@ -36,6 +37,8 @@ export default function Home() {
               Ultime aggiunte
             </a>
           </nav>
+
+          <AuthHeaderActions />
         </div>
       </header>
 
