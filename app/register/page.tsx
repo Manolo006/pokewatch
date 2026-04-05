@@ -43,8 +43,13 @@ export default function RegisterPage() {
     try {
       await loginWithGoogle();
       router.push("/");
-    } catch {
-      setErrorMessage("Registrazione con Google non riuscita. Riprova.");
+    } catch (error) {
+      console.error("Google register error:", error);
+      setErrorMessage(
+        error instanceof Error && error.message === "Firebase non configurato"
+          ? "Firebase non configurato. Controlla le variabili ambiente della build."
+          : "Registrazione con Google non riuscita. Riprova."
+      );
     } finally {
       setLoading(false);
     }

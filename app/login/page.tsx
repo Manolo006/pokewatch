@@ -36,8 +36,13 @@ export default function LoginPage() {
     try {
       await loginWithGoogle();
       router.push("/");
-    } catch {
-      setErrorMessage("Accesso con Google non riuscito. Riprova.");
+    } catch (error) {
+      console.error("Google login error:", error);
+      setErrorMessage(
+        error instanceof Error && error.message === "Firebase non configurato"
+          ? "Firebase non configurato. Controlla le variabili ambiente della build."
+          : "Accesso con Google non riuscito. Riprova."
+      );
     } finally {
       setLoading(false);
     }

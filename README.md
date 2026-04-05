@@ -29,6 +29,9 @@ Nel tuo progetto Firebase:
    - **Email/Password**
    - **Google**
 3. In **Project settings → Your apps → Web app**, copia le credenziali.
+4. In **Authentication → Settings → Authorized domains**, aggiungi:
+   - `localhost`
+   - `<tuo-username>.github.io` (dominio GitHub Pages)
 
 ### 2) Configura le variabili ambiente
 
@@ -52,4 +55,5 @@ npm run dev
 ## Note
 
 - Al momento **nessuna route è protetta** (come richiesto).
+- Su GitHub Pages, le variabili `.env` locali non vengono caricate automaticamente: imposta gli stessi valori in **GitHub → Settings → Secrets and variables → Actions → New repository secret** usando i nomi `NEXT_PUBLIC_FIREBASE_*`.
 - Se vuoi, nel prossimo step posso aggiungere route protette (es. `/stagione/*` o tutta l'app tranne login/register).
