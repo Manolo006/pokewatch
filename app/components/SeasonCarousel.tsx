@@ -334,6 +334,7 @@ export default function SeasonCarousel({ seasons, enableTrendVoting = false }: S
   const [cardWidth, setCardWidth] = useState<number>(STANDARD_CARD_WIDTH);
   const [cardHeight, setCardHeight] = useState<number>(STANDARD_CARD_HEIGHT);
   const [isMobileView, setIsMobileView] = useState(false);
+  const [isTouchInput, setIsTouchInput] = useState(false);
 
   useEffect(() => {
     const updateSizes = () => {
@@ -357,6 +358,21 @@ export default function SeasonCarousel({ seasons, enableTrendVoting = false }: S
     updateSizes();
     window.addEventListener("resize", updateSizes);
     return () => window.removeEventListener("resize", updateSizes);
+  }, []);
+
+  useEffect(() => {
+    const pointerQuery = window.matchMedia("(hover: none) and (pointer: coarse)");
+
+    const updateTouchMode = () => {
+      setIsTouchInput(pointerQuery.matches || "ontouchstart" in window);
+    };
+
+    updateTouchMode();
+    pointerQuery.addEventListener("change", updateTouchMode);
+
+    return () => {
+      pointerQuery.removeEventListener("change", updateTouchMode);
+    };
   }, []);
 
   const step = cardWidth + GAP;
@@ -481,9 +497,11 @@ export default function SeasonCarousel({ seasons, enableTrendVoting = false }: S
     </Link>
   );
 
-  if (!isCarouselEnabled || isMobileView) {
+  const useTouchCarousel = isMobileView || isTouchInput;
+
+  if (!isCarouselEnabled || useTouchCarousel) {
     return (
-      <div className="netflix-scroll mobile-carousel-scroll flex gap-3 overflow-x-auto px-1 py-3 sm:gap-4">
+      <div className="netflix-scroll mobile-carousel-scroll flex gap-3 overflow-x-auto px-1 py-3 sm:gap-4" style={{ touchAction: "pan-x" }}>
         {seasons.map((season) => (
           renderSeasonCard(season, String(season.season))
         ))}
