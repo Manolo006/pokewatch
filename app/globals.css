@@ -53,3 +53,20 @@ body {
   scrollbar-width: thin;
   scrollbar-color: #424754 #10131b;
 }
+
+.mobile-carousel-scroll {
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 0.25rem;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+@media (max-width: 768px) {
+  .mobile-carousel-scroll {
+    scrollbar-width: none;
+  }
+
+  .mobile-carousel-scroll::-webkit-scrollbar {
+    display: none;
+  }
+}

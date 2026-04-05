@@ -33,8 +33,7 @@ const GAP = 16;
 const PEEK = 0;
 const STANDARD_CARD_WIDTH = 300;
 const STANDARD_CARD_HEIGHT = 360;
-const MOBILE_CARD_WIDTH = 170;
-const MOBILE_CARD_HEIGHT = 240;
+const MOBILE_BREAKPOINT = 768;
 const WATCHED_STORAGE_PREFIX = "pokewatch-watched-season";
 
 const getThumbnailCandidates = (seasonNumber: number) => [
@@ -334,20 +333,25 @@ export default function SeasonCarousel({ seasons, enableTrendVoting = false }: S
 
   const [cardWidth, setCardWidth] = useState<number>(STANDARD_CARD_WIDTH);
   const [cardHeight, setCardHeight] = useState<number>(STANDARD_CARD_HEIGHT);
+  const [isMobileView, setIsMobileView] = useState(false);
 
   useEffect(() => {
     const updateSizes = () => {
       const w = window.innerWidth;
-      if (w <= 420) {
-        setCardWidth(MOBILE_CARD_WIDTH);
-        setCardHeight(MOBILE_CARD_HEIGHT);
-      } else if (w <= 640) {
-        setCardWidth(220);
-        setCardHeight(300);
+
+      if (w <= 480) {
+        const responsiveWidth = Math.max(220, Math.min(280, Math.round(w * 0.78)));
+        setCardWidth(responsiveWidth);
+        setCardHeight(Math.round(responsiveWidth * 1.38));
+      } else if (w <= MOBILE_BREAKPOINT) {
+        setCardWidth(250);
+        setCardHeight(330);
       } else {
         setCardWidth(STANDARD_CARD_WIDTH);
         setCardHeight(STANDARD_CARD_HEIGHT);
       }
+
+      setIsMobileView(w <= MOBILE_BREAKPOINT);
     };
 
     updateSizes();
@@ -401,81 +405,87 @@ export default function SeasonCarousel({ seasons, enableTrendVoting = false }: S
     }
   };
 
-  if (!isCarouselEnabled) {
-    return (
-      <div className="netflix-scroll flex gap-4 overflow-x-auto px-1 py-3">
-        {seasons.map((season) => (
-          <Link
-            key={season.title}
-            href={`/stagione/${season.season}`}
-            style={{
-              width: `${cardWidth}px`,
-              minWidth: `${cardWidth}px`,
-              maxWidth: `${cardWidth}px`,
-              height: `${cardHeight}px`,
-            }}
-            className="group relative flex shrink-0 flex-col overflow-hidden rounded-md border border-white/10 bg-zinc-900 transition duration-300 hover:-translate-y-1 hover:border-white/25"
-          >
-            {(watchedProgressBySeason[season.season] ?? 0) >= 100 ? (
-              <span className="absolute right-2 top-2 z-20 inline-flex h-13 w-13 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-black/30">
-                <IoCheckmark className="text-3xl" aria-hidden="true" />
-              </span>
-            ) : null}
+  const renderSeasonCard = (season: PokemonSeason, key: string) => (
+    <Link
+      key={key}
+      href={`/stagione/${season.season}`}
+      onClick={() => {
+        trackSeasonOpen(season.season);
+      }}
+      style={{
+        width: `${cardWidth}px`,
+        minWidth: `${cardWidth}px`,
+        maxWidth: `${cardWidth}px`,
+        height: `${cardHeight}px`,
+      }}
+      className={`group relative flex shrink-0 flex-col overflow-hidden rounded-md border border-white/10 bg-zinc-900 transition duration-300 hover:-translate-y-1 hover:border-white/25 ${
+        isMobileView ? "snap-start active:scale-[0.99]" : ""
+      }`}
+    >
+      {(watchedProgressBySeason[season.season] ?? 0) >= 100 ? (
+        <span className="absolute right-2 top-2 z-20 inline-flex h-13 w-13 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-black/30">
+          <IoCheckmark className="text-3xl" aria-hidden="true" />
+        </span>
+      ) : null}
 
-            <SeasonThumbnail
-              seasonNumber={season.season}
-              title={season.title}
-              arc={season.arc}
-              accent={season.accent}
+      <SeasonThumbnail seasonNumber={season.season} title={season.title} arc={season.arc} accent={season.accent} />
+
+      <div className="flex flex-1 flex-col justify-between p-4">
+        <div>
+          <h3 className="line-clamp-2 text-base font-bold leading-snug">{season.title}</h3>
+          <p className="mt-2 line-clamp-3 text-sm text-white/70">{season.synopsis}</p>
+        </div>
+
+        <div className="mt-3 space-y-2">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-red-500 transition-all duration-300"
+              style={{ width: `${watchedProgressBySeason[season.season] ?? 0}%` }}
             />
+          </div>
 
-            <div className="flex flex-1 flex-col justify-between p-4">
-              <div>
-                <h3 className="line-clamp-2 text-base font-bold leading-snug">{season.title}</h3>
-                <p className="mt-2 line-clamp-3 text-sm text-white/70">{season.synopsis}</p>
-              </div>
+          <p className="text-[11px] text-white/60">{watchedProgressBySeason[season.season] ?? 0}% visto</p>
+        </div>
 
-              <div className="mt-3 space-y-2">
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-red-500 transition-all duration-300"
-                    style={{ width: `${watchedProgressBySeason[season.season] ?? 0}%` }}
-                  />
-                </div>
+        {enableTrendVoting ? (
+          <div className="mt-2 space-y-2">
+            <p
+              className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                communityTrendBySeason[season.season]?.consensus === "tendenza"
+                  ? "border-fuchsia-400/30 bg-fuchsia-500/20 text-fuchsia-100"
+                  : "border-slate-400/30 bg-slate-500/20 text-slate-100"
+              }`}
+            >
+              Trend automatico: {communityTrendBySeason[season.season]?.consensus === "tendenza" ? "Di tendenza" : "Normale"}
+            </p>
 
-                <p className="text-[11px] text-white/60">{watchedProgressBySeason[season.season] ?? 0}% visto</p>
-              </div>
+            <p className="text-[10px] text-white/75">
+              {communityTrendBySeason[season.season]?.clicks ?? 0} aperture
+              {communityTrendBySeason[season.season]?.totalClicks
+                ? ` · ${communityTrendBySeason[season.season].share}% del totale`
+                : ""}
+            </p>
+          </div>
+        ) : null}
 
-              {enableTrendVoting ? (
-                <div className="mt-2 space-y-2">
-                  <p
-                    className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-                      communityTrendBySeason[season.season]?.consensus === "tendenza"
-                        ? "border-fuchsia-400/30 bg-fuchsia-500/20 text-fuchsia-100"
-                        : "border-slate-400/30 bg-slate-500/20 text-slate-100"
-                    }`}
-                  >
-                    Trend automatico: {communityTrendBySeason[season.season]?.consensus === "tendenza" ? "Di tendenza" : "Normale"}
-                  </p>
+        <p className="mt-3 text-xs text-white/60">
+          <span className="inline-flex items-center gap-1">
+            <span>{season.years}</span>
+            <GoDotFill className="text-[10px]" aria-hidden="true" />
+            <span>{episodesLabel(season.episodes)}</span>
+          </span>
+        </p>
+      </div>
 
-                  <p className="text-[10px] text-white/75">
-                    {communityTrendBySeason[season.season]?.clicks ?? 0} aperture
-                    {communityTrendBySeason[season.season]?.totalClicks
-                      ? ` · ${communityTrendBySeason[season.season].share}% del totale`
-                      : ""}
-                  </p>
-                </div>
-              ) : null}
+      <div className="pointer-events-none absolute inset-0 rounded-md ring-1 ring-inset ring-white/0 transition group-hover:ring-white/20" />
+    </Link>
+  );
 
-              <p className="mt-3 text-xs text-white/60">
-                <span className="inline-flex items-center gap-1">
-                  <span>{season.years}</span>
-                  <GoDotFill className="text-[10px]" aria-hidden="true" />
-                  <span>{episodesLabel(season.episodes)}</span>
-                </span>
-              </p>
-            </div>
-          </Link>
+  if (!isCarouselEnabled || isMobileView) {
+    return (
+      <div className="netflix-scroll mobile-carousel-scroll flex gap-3 overflow-x-auto px-1 py-3 sm:gap-4">
+        {seasons.map((season) => (
+          renderSeasonCard(season, String(season.season))
         ))}
       </div>
     );
@@ -517,82 +527,7 @@ export default function SeasonCarousel({ seasons, enableTrendVoting = false }: S
           onTransitionEnd={handleTransitionEnd}
         >
           {trackItems.map((season, index) => (
-            <Link
-              key={`${season.title}-${index}`}
-              href={`/stagione/${season.season}`}
-              onClick={() => {
-                trackSeasonOpen(season.season);
-              }}
-              style={{
-                width: `${cardWidth}px`,
-                minWidth: `${cardWidth}px`,
-                maxWidth: `${cardWidth}px`,
-                height: `${cardHeight}px`,
-              }}
-              className="group relative flex shrink-0 flex-col overflow-hidden rounded-md border border-white/10 bg-zinc-900 transition duration-300 hover:-translate-y-1 hover:border-white/25"
-            >
-              {(watchedProgressBySeason[season.season] ?? 0) >= 100 ? (
-                <span className="absolute right-2 top-2 z-20 inline-flex h-13 w-13 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-black/30">
-                  <IoCheckmark className="text-3xl" aria-hidden="true" />
-                </span>
-              ) : null}
-
-              <SeasonThumbnail
-                seasonNumber={season.season}
-                title={season.title}
-                arc={season.arc}
-                accent={season.accent}
-              />
-
-              <div className="flex flex-1 flex-col justify-between p-4">
-                <div>
-                  <h3 className="line-clamp-2 text-base font-bold leading-snug">{season.title}</h3>
-                  <p className="mt-2 line-clamp-3 text-sm text-white/70">{season.synopsis}</p>
-                </div>
-
-                <div className="mt-3 space-y-2">
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full bg-red-500 transition-all duration-300"
-                      style={{ width: `${watchedProgressBySeason[season.season] ?? 0}%` }}
-                    />
-                  </div>
-
-                  <p className="text-[11px] text-white/60">{watchedProgressBySeason[season.season] ?? 0}% visto</p>
-                </div>
-
-                {enableTrendVoting ? (
-                  <div className="mt-2 space-y-2">
-                    <p
-                      className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-                        communityTrendBySeason[season.season]?.consensus === "tendenza"
-                          ? "border-fuchsia-400/30 bg-fuchsia-500/20 text-fuchsia-100"
-                          : "border-slate-400/30 bg-slate-500/20 text-slate-100"
-                      }`}
-                    >
-                      Trend automatico: {communityTrendBySeason[season.season]?.consensus === "tendenza" ? "Di tendenza" : "Normale"}
-                    </p>
-
-                    <p className="text-[10px] text-white/75">
-                      {communityTrendBySeason[season.season]?.clicks ?? 0} aperture
-                      {communityTrendBySeason[season.season]?.totalClicks
-                        ? ` · ${communityTrendBySeason[season.season].share}% del totale`
-                        : ""}
-                    </p>
-                  </div>
-                ) : null}
-
-                <p className="mt-3 text-xs text-white/60">
-                  <span className="inline-flex items-center gap-1">
-                    <span>{season.years}</span>
-                    <GoDotFill className="text-[10px]" aria-hidden="true" />
-                    <span>{episodesLabel(season.episodes)}</span>
-                  </span>
-                </p>
-              </div>
-
-              <div className="pointer-events-none absolute inset-0 rounded-md ring-1 ring-inset ring-white/0 transition group-hover:ring-white/20" />
-            </Link>
+            renderSeasonCard(season, `${season.title}-${index}`)
           ))}
         </div>
       </div>

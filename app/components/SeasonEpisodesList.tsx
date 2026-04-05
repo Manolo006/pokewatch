@@ -8,19 +8,12 @@ import { db } from "@/app/lib/firebase";
 import { useAuth } from "@/app/components/AuthProvider";
 
 type EpisodeFillerType = "non-filler" | "filler" | "misto";
-type EpisodeTrendType = "tendenza" | "normale";
 type CommunityEpisodeStats = {
   "non-filler": number;
   filler: number;
   misto: number;
   total: number;
   consensus: EpisodeFillerType | null;
-};
-type CommunityTrendStats = {
-  tendenza: number;
-  normale: number;
-  total: number;
-  consensus: EpisodeTrendType | null;
 };
 
 type SeasonEpisodesListProps = {
@@ -32,11 +25,6 @@ const fillerTypeLabels: Record<EpisodeFillerType, string> = {
   "non-filler": "Non filler",
   filler: "Filler",
   misto: "Misto",
-};
-
-const trendTypeLabels: Record<EpisodeTrendType, string> = {
-  tendenza: "Di tendenza",
-  normale: "Normale",
 };
 
 const fillerTypeBadgeClasses: Record<EpisodeFillerType, string> = {
@@ -51,6 +39,42 @@ const LAST_WATCHED_STORAGE_KEY = "pokewatch-last-watched";
 
 const getFillerStorageKey = (seasonNumber: number) => `${FILLER_STORAGE_PREFIX}-${seasonNumber}`;
 const getWatchedStorageKey = (seasonNumber: number) => `${WATCHED_STORAGE_PREFIX}-${seasonNumber}`;
+
+const extractYouTubeVideoId = (youtubeUrl?: string) => {
+  if (!youtubeUrl) return null;
+
+  try {
+    const parsedUrl = new URL(youtubeUrl);
+
+    if (parsedUrl.hostname.includes("youtu.be")) {
+      return parsedUrl.pathname.replace("/", "") || null;
+    }
+
+    if (parsedUrl.hostname.includes("youtube.com")) {
+      return parsedUrl.searchParams.get("v");
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+const getYouTubeEmbedUrl = (videoId: string) => {
+  const params = new URLSearchParams({
+    autoplay: "1",
+    rel: "0",
+    controls: "1",
+    fs: "1",
+    playsinline: "1",
+    iv_load_policy: "3",
+    color: "white",
+    hl: "it",
+    enablejsapi: "1",
+  });
+
+  return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
+};
 
 const parseFillerStoredValue = (rawValue: string | null): Record<number, EpisodeFillerType> => {
   if (!rawValue) return {};
@@ -163,57 +187,12 @@ const buildCommunityStats = (value: unknown): Record<number, CommunityEpisodeSta
   return byEpisode;
 };
 
-const buildCommunityTrendStats = (value: unknown): Record<number, CommunityTrendStats> => {
-  if (!value || typeof value !== "object") {
-    return {};
-  }
-
-  const byEpisode: Record<number, CommunityTrendStats> = {};
-
-  Object.entries(value as Record<string, unknown>).forEach(([episodeKey, episodeValue]) => {
-    const episodeNumber = Number(episodeKey);
-    if (!Number.isInteger(episodeNumber) || !episodeValue || typeof episodeValue !== "object") {
-      return;
-    }
-
-    const votesValue = (episodeValue as Record<string, unknown>).votes;
-    if (!votesValue || typeof votesValue !== "object") {
-      byEpisode[episodeNumber] = {
-        tendenza: 0,
-        normale: 0,
-        total: 0,
-        consensus: null,
-      };
-      return;
-    }
-
-    const stats: CommunityTrendStats = {
-      tendenza: 0,
-      normale: 0,
-      total: 0,
-      consensus: null,
-    };
-
-    Object.values(votesValue as Record<string, unknown>).forEach((vote) => {
-      if (vote === "tendenza" || vote === "normale") {
-        stats[vote] += 1;
-        stats.total += 1;
-      }
-    });
-
-    stats.consensus = stats.total > 0 ? (stats.tendenza >= stats.normale ? "tendenza" : "normale") : null;
-    byEpisode[episodeNumber] = stats;
-  });
-
-  return byEpisode;
-};
-
 export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpisodesListProps) {
   const { user } = useAuth();
   const [fillerByEpisode, setFillerByEpisode] = useState<Record<number, EpisodeFillerType>>({});
   const [watchedByEpisode, setWatchedByEpisode] = useState<Record<number, boolean>>({});
   const [communityByEpisode, setCommunityByEpisode] = useState<Record<number, CommunityEpisodeStats>>({});
-  const [communityTrendByEpisode, setCommunityTrendByEpisode] = useState<Record<number, CommunityTrendStats>>({});
+  const [openEpisodeNumber, setOpenEpisodeNumber] = useState<number | null>(null);
   const isFillerLoadedRef = useRef(false);
   const canPersistWatchedRef = useRef(false);
 
@@ -254,22 +233,6 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
     }
   }, [seasonNumber, user]);
 
-  const loadCommunityTrendVotes = useCallback(async () => {
-    if (!db) {
-      setCommunityTrendByEpisode({});
-      return;
-    }
-
-    try {
-      const communityRef = ref(db, `community/trendVotesBySeason/${seasonNumber}`);
-      const snapshot = await get(communityRef);
-      const raw = snapshot.val();
-      setCommunityTrendByEpisode(buildCommunityTrendStats(raw));
-    } catch {
-      setCommunityTrendByEpisode({});
-    }
-  }, [seasonNumber]);
-
   useEffect(() => {
     isFillerLoadedRef.current = false;
 
@@ -291,10 +254,6 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
   useEffect(() => {
     void loadCommunityVotes();
   }, [loadCommunityVotes]);
-
-  useEffect(() => {
-    void loadCommunityTrendVotes();
-  }, [loadCommunityTrendVotes]);
 
   useEffect(() => {
     let isActive = true;
@@ -459,14 +418,11 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
         const selectedType = fillerByEpisode[episode.number];
         const isWatched = Boolean(watchedByEpisode[episode.number]);
         const community = communityByEpisode[episode.number];
-        const communityTrend = communityTrendByEpisode[episode.number];
+        const youtubeVideoId = extractYouTubeVideoId(episode.youtubeUrl);
+        const isPlayerOpen = openEpisodeNumber === episode.number;
         const communityPercent =
           community && community.consensus && community.total > 0
             ? Math.round((community[community.consensus] / community.total) * 100)
-            : 0;
-        const communityTrendPercent =
-          communityTrend && communityTrend.consensus && communityTrend.total > 0
-            ? Math.round((communityTrend[communityTrend.consensus] / communityTrend.total) * 100)
             : 0;
 
         return (
@@ -480,13 +436,13 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
             }`}
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-              <div className="relative h-24 w-full overflow-hidden rounded-md border border-white/10 bg-black sm:h-20 sm:w-36 sm:shrink-0">
+              <div className="relative h-32 w-full overflow-hidden rounded-md border border-white/10 bg-black sm:h-28 sm:w-48 sm:shrink-0">
                 {episode.thumbnailUrl ? (
                   <NextImage
                     src={episode.thumbnailUrl}
                     alt={episode.title}
                     fill
-                    sizes="(max-width: 640px) 100vw, 144px"
+                    sizes="(max-width: 640px) 100vw, 192px"
                     className="object-cover"
                   />
                 ) : (
@@ -554,27 +510,52 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
                   </span>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs text-white/70">Trend episodio automatico:</span>
-                  <span className="rounded-full border border-fuchsia-400/30 bg-fuchsia-500/15 px-2 py-0.5 text-[11px] font-semibold text-fuchsia-100">
-                    Community trend: {communityTrend?.consensus ? trendTypeLabels[communityTrend.consensus] : "N/D"}
-                    {communityTrend?.consensus ? ` · ${communityTrendPercent}%` : ""}
-                    {communityTrend ? ` (${communityTrend.total} voti)` : ""}
-                  </span>
-                </div>
+                {youtubeVideoId ? (
+                  <div className="space-y-2 pt-1">
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpenEpisodeNumber((prev) => (prev === episode.number ? null : episode.number));
+                          markEpisodeAsWatched(episode.number);
+                        }}
+                        className="inline-flex items-center rounded bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-500"
+                      >
+                        {isPlayerOpen ? "Chiudi player" : "Guarda"}
+                      </button>
 
-                {episode.youtubeUrl ? (
-                  <a
-                    href={episode.youtubeUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={() => {
-                      markEpisodeAsWatched(episode.number);
-                    }}
-                    className="inline-flex pt-1 text-xs font-semibold text-red-300 transition hover:text-red-200"
-                  >
-                    Guarda su YouTube
-                  </a>
+                    </div>
+
+                    {isPlayerOpen ? (
+                      <div className="overflow-hidden rounded-2xl border border-red-500/30 bg-gradient-to-b from-zinc-900 to-black shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_10px_40px_rgba(0,0,0,0.6)]">
+                        <div className="flex items-center justify-between border-b border-white/10 bg-black/60 px-3 py-2 text-[11px]">
+                          <div className="flex items-center gap-2 text-white/85">
+                            <span className="inline-block h-2 w-2 rounded-full bg-red-500" aria-hidden="true" />
+                            <span className="font-semibold tracking-wide">POKÉWATCH PLAYER</span>
+                          </div>
+                          <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-white/70">
+                            Episodio {episode.number}
+                          </span>
+                        </div>
+
+                        <div className="aspect-video w-full">
+                          <iframe
+                            src={getYouTubeEmbedUrl(youtubeVideoId)}
+                            title={`Player episodio ${episode.number}: ${episode.title}`}
+                            className="h-full w-full"
+                            loading="lazy"
+                            referrerPolicy="strict-origin-when-cross-origin"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                          />
+                        </div>
+                        <div className="border-t border-white/10 bg-black/40 px-3 py-2 text-[11px] text-white/65">
+                          Lingua audio: usa <span className="font-semibold text-white/85">⚙ Impostazioni → Traccia audio</span> nel player.
+                          (Disponibile solo se il video YouTube ha più tracce audio.)
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
                 ) : null}
               </div>
             </div>
