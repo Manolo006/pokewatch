@@ -35,6 +35,13 @@ export default function PublicProfileClient({ params }: PublicProfileClientProps
   const isOwnProfile = Boolean(user?.email && getUserSlug(user.email) === normalizedUsername);
 
   useEffect(() => {
+    if (loading) return;
+
+    if (isOwnProfile) {
+      setStatus("ready");
+      return;
+    }
+
     if (!db) return;
 
     const database = db;
@@ -65,7 +72,7 @@ export default function PublicProfileClient({ params }: PublicProfileClientProps
     return () => {
       active = false;
     };
-  }, [db, normalizedUsername]);
+  }, [db, isOwnProfile, loading, normalizedUsername]);
 
   useEffect(() => {
     if (status !== "missing") return;

@@ -4,7 +4,7 @@ type PublicProfilePageProps = {
   params: Promise<{ username: string }>;
 };
 
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 export function generateStaticParams() {
   return [{ username: "profile" }];
