@@ -67,10 +67,10 @@ export default function SeasonHeroThumbnail({
       {thumbnailSrc ? (
         <img src={thumbnailSrc} alt={title} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
       ) : (
-        <div className={`absolute inset-0 bg-gradient-to-r ${accent} via-slate-700 to-black`} />
+        <div className={`absolute inset-0 bg-linear-to-r ${accent} via-slate-700 to-black`} />
       )}
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
+      <div className="absolute inset-0 bg-linear-to-t from-black/50 via-black/10 to-transparent" />
     </div>
   );
 }
