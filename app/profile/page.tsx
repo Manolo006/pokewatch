@@ -22,7 +22,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#141414] text-white">
-      <header className="relative border-b border-white/10 bg-black/80 backdrop-blur-md">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-[1500px] items-center justify-between gap-3 px-3 py-2 sm:px-8 sm:py-3">
           <div className="flex items-center gap-2.5 sm:gap-4">
             <Link href="/" aria-label="Vai alla home">
@@ -50,7 +50,7 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      <main>
+      <main className="pt-20 sm:pt-24">
         <section className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-8 sm:py-14">
           {loading ? (
             <p className="text-sm text-white/70">Caricamento profilo...</p>
