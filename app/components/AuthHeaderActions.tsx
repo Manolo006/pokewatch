@@ -5,6 +5,8 @@ import { useAuth } from "@/app/components/AuthProvider";
 
 export default function AuthHeaderActions() {
   const { user, loading, logout } = useAuth();
+  const username = user?.email?.split("@")[0]?.toLowerCase().replace(/[^a-z0-9._-]/g, "") || "profile";
+  const displayName = user?.displayName?.trim() || user?.email?.split("@")[0] || "Profilo";
 
   if (loading) {
     return <div className="text-xs text-white/60">Caricamento account...</div>;
@@ -32,10 +34,10 @@ export default function AuthHeaderActions() {
   return (
     <div className="flex items-center gap-2">
       <Link
-        href="/profile"
+        href={`/profile/${username}`}
         className="max-w-[170px] truncate text-xs text-white/80 underline decoration-white/30 underline-offset-2 transition hover:text-white hover:decoration-white"
       >
-        {user.email}
+        {displayName}
       </Link>
       <button
         type="button"

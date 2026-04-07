@@ -19,7 +19,18 @@ import {
   type User,
 } from "firebase/auth";
 import { FirebaseError } from "firebase/app";
-import { auth, googleProvider, isFirebaseConfigured } from "@/app/lib/firebase";
+import { set, ref } from "firebase/database";
+import { auth, db, googleProvider, isFirebaseConfigured } from "@/app/lib/firebase";
+
+function getUserSlug(email?: string | null) {
+  return email?.split("@")[0]?.toLowerCase().replace(/[^a-z0-9._-]/g, "") || "profile";
+}
+
+function getDisplayName(user: User) {
+  if (user.displayName?.trim()) return user.displayName.trim();
+  const fromEmail = user.email?.split("@")[0];
+  return fromEmail ? fromEmail.charAt(0).toUpperCase() + fromEmail.slice(1) : "Allenatore PokéWatch";
+}
 
 type AuthContextValue = {
   user: User | null;
@@ -45,6 +56,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
       setUser(nextUser);
       setLoading(false);
+
+      if (nextUser && db) {
+        const username = getUserSlug(nextUser.email);
+        const displayName = getDisplayName(nextUser);
+        const joinedAt = nextUser.metadata.creationTime ?? null;
+
+        void set(ref(db, `publicProfiles/${username}`), {
+          uid: nextUser.uid,
+          username,
+          displayName,
+          joinedAt,
+        });
+
+        void set(ref(db, `users/${nextUser.uid}/publicProfile`), {
+          username,
+          displayName,
+          joinedAt,
+        });
+      }
     });
 
     return () => unsubscribe();
