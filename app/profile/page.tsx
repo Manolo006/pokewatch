@@ -328,8 +328,6 @@ export default function ProfilePage({
     if (loading || !user) return;
     if (viewedUserId) return;
     if (pathname !== "/profile") return;
-
-    router.replace(`/profile/${getUserSlug(user.email)}`);
   }, [loading, pathname, router, user, viewedUserId]);
 
   useEffect(() => {
@@ -794,7 +792,7 @@ export default function ProfilePage({
             </div>
 
             <div className="flex items-center gap-2">
-              <Link href={`/profile/${ownUsername}`} className="rounded border border-white/20 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10">
+              <Link href="/profile" className="rounded border border-white/20 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10">
                 Torna al profilo
               </Link>
               <button
@@ -1124,7 +1122,7 @@ export default function ProfilePage({
                             Impostazioni
                           </Link>
                         ) : (
-                          <Link href={`/profile/${usernameLabel}`} className="rounded bg-[#e50914] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#f6121d]">
+                          <Link href="/profile" className="rounded bg-[#e50914] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#f6121d]">
                             Chiudi modifica
                           </Link>
                         )}
