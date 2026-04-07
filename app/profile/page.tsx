@@ -22,8 +22,8 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#141414] text-white">
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-[1500px] flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-8 sm:py-4">
+      <header className="border-b border-white/10 bg-black/80 backdrop-blur-md">
+        <div className="mx-auto flex w-full max-w-[1500px] flex-wrap items-center justify-between gap-3 px-3 py-2 sm:px-8 sm:py-3">
           <div className="flex items-center gap-2.5 sm:gap-4">
             <Link href="/" aria-label="Vai alla home">
               <Image src="/logo.png" alt="PokéWatch" width={180} height={42} className="h-auto w-[122px] sm:w-[180px]" priority />
