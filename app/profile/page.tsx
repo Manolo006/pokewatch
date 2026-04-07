@@ -22,8 +22,8 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#141414] text-white">
-      <header className="border-b border-white/10 bg-black/80 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-[1500px] flex-wrap items-center justify-between gap-3 px-3 py-2 sm:px-8 sm:py-3">
+      <header className="relative border-b border-white/10 bg-black/80 backdrop-blur-md">
+        <div className="mx-auto flex w-full max-w-[1500px] items-center justify-between gap-3 px-3 py-2 sm:px-8 sm:py-3">
           <div className="flex items-center gap-2.5 sm:gap-4">
             <Link href="/" aria-label="Vai alla home">
               <Image src="./logo.png" alt="PokéWatch" width={180} height={42} className="h-auto w-[122px] sm:w-[180px]" priority />
@@ -33,7 +33,7 @@ export default function ProfilePage() {
 
           <AuthHeaderActions />
 
-          <nav className="mobile-top-nav order-3 flex w-full items-center gap-4 overflow-x-auto whitespace-nowrap text-[11px] text-white/80 sm:order-none sm:w-auto sm:gap-6 sm:text-sm">
+          <nav className="mobile-top-nav flex items-center gap-4 overflow-x-auto whitespace-nowrap text-[11px] text-white/80 sm:gap-6 sm:text-sm">
             <Link href="/" className="hover:text-white">
               Home
             </Link>
