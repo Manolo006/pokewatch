@@ -26,7 +26,7 @@ export default function ProfilePage() {
         <div className="mx-auto flex w-full max-w-[1500px] flex-wrap items-center justify-between gap-3 px-3 py-2 sm:px-8 sm:py-3">
           <div className="flex items-center gap-2.5 sm:gap-4">
             <Link href="/" aria-label="Vai alla home">
-              <Image src="/logo.png" alt="PokéWatch" width={180} height={42} className="h-auto w-[122px] sm:w-[180px]" priority />
+              <Image src="./logo.png" alt="PokéWatch" width={180} height={42} className="h-auto w-[122px] sm:w-[180px]" priority />
             </Link>
             <span className="rounded bg-yellow-400 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-black">ANIME</span>
           </div>
