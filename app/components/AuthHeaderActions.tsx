@@ -31,7 +31,12 @@ export default function AuthHeaderActions() {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="max-w-[170px] truncate text-xs text-white/80">{user.email}</span>
+      <Link
+        href="/profile"
+        className="max-w-[170px] truncate text-xs text-white/80 underline decoration-white/30 underline-offset-2 transition hover:text-white hover:decoration-white"
+      >
+        {user.email}
+      </Link>
       <button
         type="button"
         onClick={() => void logout()}
