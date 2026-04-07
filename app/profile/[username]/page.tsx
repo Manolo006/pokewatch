@@ -37,10 +37,12 @@ export default function PublicProfilePage({ params }: PublicProfilePageProps) {
   useEffect(() => {
     if (!db) return;
 
+    const database = db;
+
     let active = true;
 
     const checkProfile = async () => {
-      const profileSnapshot = await get(ref(db, `publicProfiles/${normalizedUsername}`));
+      const profileSnapshot = await get(ref(database, `publicProfiles/${normalizedUsername}`));
       if (!active) return;
 
       if (!profileSnapshot.exists()) {
@@ -63,7 +65,7 @@ export default function PublicProfilePage({ params }: PublicProfilePageProps) {
     return () => {
       active = false;
     };
-  }, [normalizedUsername]);
+  }, [db, normalizedUsername]);
 
   useEffect(() => {
     if (status !== "missing") return;

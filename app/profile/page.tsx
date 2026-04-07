@@ -335,10 +335,12 @@ export default function ProfilePage({
   useEffect(() => {
     if (!user || !db || isPublicView) return;
 
+    const database = db;
+
     let active = true;
 
     const loadOwnProfileSettings = async () => {
-      const snapshot = await get(ref(db, `users/${user.uid}/publicProfile`));
+      const snapshot = await get(ref(database, `users/${user.uid}/publicProfile`));
       if (!active) return;
 
       const value = (snapshot.val() as Partial<OwnProfileSettings> | null) ?? null;
@@ -370,7 +372,7 @@ export default function ProfilePage({
     return () => {
       active = false;
     };
-  }, [isPublicView, user]);
+  }, [db, isPublicView, user]);
 
   const saveProfileBasics = async () => {
     if (!user || !db) return;
@@ -620,6 +622,8 @@ export default function ProfilePage({
   useEffect(() => {
     if (typeof window === "undefined" || !db) return;
 
+    const database = db;
+
     const targetUserId = viewedUserId ?? user?.uid;
     if (!targetUserId) return;
 
@@ -631,8 +635,8 @@ export default function ProfilePage({
 
     const loadFromDb = async () => {
       try {
-        const watchedSnapshot = await get(ref(db, `users/${targetUserId}/watchedBySeason`));
-        const fillerSnapshot = await get(ref(db, "community/fillerVotesBySeason"));
+        const watchedSnapshot = await get(ref(database, `users/${targetUserId}/watchedBySeason`));
+        const fillerSnapshot = await get(ref(database, "community/fillerVotesBySeason"));
 
         if (!active) return;
 
@@ -657,7 +661,7 @@ export default function ProfilePage({
     return () => {
       active = false;
     };
-  }, [user?.uid, viewedUserId]);
+  }, [db, user?.uid, viewedUserId]);
 
   const watchedTotals = useMemo(() => {
     const totals = {
