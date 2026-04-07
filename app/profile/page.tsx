@@ -1037,7 +1037,7 @@ export default function ProfilePage({
         <div className="mx-auto flex w-full max-w-375 flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-8 sm:py-4">
           <div className="flex items-center gap-2.5 sm:gap-4">
             <Link href="/" aria-label="Vai alla home">
-              <Image src="/logo.png" alt="PokéWatch" width={180} height={42} className="h-auto w-30.5 sm:w-45" priority />
+              <Image src="./logo.png" alt="PokéWatch" width={180} height={42} className="h-auto w-30.5 sm:w-45" priority />
             </Link>
             <span className="rounded bg-[#e50914] px-2.5 py-1 text-[10px] font-black tracking-[0.18em] text-white shadow-[0_0_14px_rgba(229,9,20,.45)]">
               PROFILE
