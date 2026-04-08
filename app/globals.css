@@ -55,7 +55,7 @@ body {
 }
 
 .mobile-carousel-scroll {
-  scroll-snap-type: x mandatory;
+  scroll-snap-type: x proximity;
   scroll-padding-left: 0.25rem;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
