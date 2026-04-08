@@ -16,8 +16,6 @@ type PublicProfileRecord = {
   username?: string;
   displayName?: string;
   joinedAt?: string | null;
-  joinDayVisible?: boolean;
-  profileVisibility?: "public" | "private";
 };
 
 function getUserSlug(email?: string | null) {
@@ -97,8 +95,6 @@ export default function PublicProfileClient({ params }: PublicProfileClientProps
       publicDisplayName={publicProfile?.displayName}
       publicUsername={publicProfile?.username ?? normalizedUsername}
       publicJoinedAt={publicProfile?.joinedAt}
-      publicJoinDayVisible={publicProfile?.joinDayVisible}
-      publicProfileVisibility={publicProfile?.profileVisibility}
       readOnly
     />
   );
