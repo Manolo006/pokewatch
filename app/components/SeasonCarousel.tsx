@@ -441,7 +441,7 @@ export default function SeasonCarousel({ seasons, enableTrendVoting = false }: S
         const deltaX = Math.abs(touch.clientX - touchStartRef.current.x);
         const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
 
-        if (deltaX > 12 && deltaX > deltaY + 8) {
+        if (deltaX > 9 && deltaX > deltaY + 5) {
           swipeGestureRef.current = true;
         }
       }}
