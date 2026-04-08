@@ -139,7 +139,7 @@
         "title": "Pokémon - Nero e Bianco",
         "arc": "Unima",
         "synopsis": "Ash e Pikachu partono per Unima, affrontando una regione piena di nuovi Pokémon e rivali.",
-        "episodes": null,
+        "episodes": 48,
         "years": "2010-2011",
         "accent": "from-zinc-600/90"
       },
@@ -148,7 +148,7 @@
         "title": "Nero e Bianco - Destini Rivali",
         "arc": "Unima",
         "synopsis": "Le rivalità si intensificano mentre il cammino verso la Lega Unima entra nel vivo.",
-        "episodes": null,
+        "episodes": 49,
         "years": "2011-2012",
         "accent": "from-slate-600/90"
       },
@@ -157,7 +157,7 @@
         "title": "Nero e Bianco - Avventure a Unima e altrove",
         "arc": "Unima",
         "synopsis": "Il viaggio continua oltre Unima, tra sfide finali e nuovi incontri decisivi.",
-        "episodes": null,
+        "episodes": 45,
         "years": "2012-2013",
         "accent": "from-stone-600/90"
       }
@@ -171,7 +171,7 @@
         "title": "XY",
         "arc": "Kalos",
         "synopsis": "Ash arriva a Kalos e forma una nuova squadra per esplorare palestre e misteri della regione.",
-        "episodes": null,
+        "episodes": 48,
         "years": "2013-2014",
         "accent": "from-blue-500/90"
       },
@@ -180,7 +180,7 @@
         "title": "XY - Esplorazioni a Kalos",
         "arc": "Kalos",
         "synopsis": "La corsa ai badge prosegue mentre Serena insegue i suoi obiettivi nelle esibizioni Pokémon.",
-        "episodes": null,
+        "episodes": 45,
         "years": "2014-2015",
         "accent": "from-cyan-500/90"
       },
@@ -189,7 +189,7 @@
         "title": "XYZ",
         "arc": "Kalos",
         "synopsis": "La minaccia di Team Flare cresce, con sfide cruciali per il destino di Kalos.",
-        "episodes": null,
+        "episodes": 48,
         "years": "2015-2016",
         "accent": "from-indigo-500/90"
       }
@@ -203,7 +203,7 @@
         "title": "Sole e Luna",
         "arc": "Alola",
         "synopsis": "Ad Alola, Ash vive esperienze scolastiche e nuove avventure in un format diverso dal solito.",
-        "episodes": null,
+        "episodes": 43,
         "years": "2016-2017",
         "accent": "from-yellow-500/90"
       },
@@ -212,7 +212,7 @@
         "title": "Sole e Luna - Ultravventure",
         "arc": "Alola",
         "synopsis": "Le avventure si ampliano con nuove Ultracreature e sfide sempre più impegnative.",
-        "episodes": null,
+        "episodes": 48,
         "years": "2017-2018",
         "accent": "from-amber-500/90"
       },
@@ -221,7 +221,7 @@
         "title": "Sole e Luna - Utraleggende",
         "arc": "Alola",
         "synopsis": "Il percorso ad Alola si conclude con sfide epiche e il culmine della Lega locale.",
-        "episodes": null,
+        "episodes": 54,
         "years": "2018-2019",
         "accent": "from-orange-400/90"
       }
@@ -235,7 +235,7 @@
         "title": "Esplorazioni Pokémon",
         "arc": "Mondo Pokémon",
         "synopsis": "Ash e Goh viaggiano attraverso molte regioni, incontrando Pokémon vecchi e nuovi.",
-        "episodes": null,
+        "episodes": 48,
         "years": "2019-2020",
         "accent": "from-violet-500/90"
       },
@@ -244,7 +244,7 @@
         "title": "Esplorazioni Pokémon Master",
         "arc": "Mondo Pokémon",
         "synopsis": "La scalata nel World Coronation Series prosegue con incontri sempre più prestigiosi.",
-        "episodes": null,
+        "episodes": 42,
         "years": "2020-2021",
         "accent": "from-purple-500/90"
       },
