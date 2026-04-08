@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist_Mono, Lexend } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/app/components/AuthProvider";
+import Footer from "@/app/components/Footer";
 
 const lexend = Lexend({
   variable: "--font-lexend",
@@ -29,7 +30,12 @@ export default function RootLayout({
       className={`${lexend.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <div className="flex min-h-screen flex-col">
+            <div className="flex-1">{children}</div>
+            <Footer />
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );

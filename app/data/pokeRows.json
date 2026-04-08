@@ -50,11 +50,11 @@
     ]
   },
   {
-    "rowTitle": "Generazione Advanced",
+    "rowTitle": "Advanced",
     "seasons": [
       {
         "season": 6,
-        "title": "Pokémon: Advanced",
+        "title": "Advanced",
         "arc": "Hoenn",
         "synopsis": "Nuovi compagni, contest Pokémon e le prime sfide nella regione di Hoenn.",
         "episodes": 40,
@@ -63,7 +63,7 @@
       },
       {
         "season": 7,
-        "title": "Pokémon: Advanced Challenge",
+        "title": "Advanced Challenge",
         "arc": "Hoenn",
         "synopsis": "Le sfide si alzano tra lotte in palestra e il Grande Festival.",
         "episodes": 52,
@@ -72,7 +72,7 @@
       },
       {
         "season": 8,
-        "title": "Pokémon: Advanced Battle",
+        "title": "Advanced Battle",
         "arc": "Hoenn",
         "synopsis": "Rivali più forti e lotte decisive portano Ash verso la Lega Hoenn.",
         "episodes": 53,
@@ -81,7 +81,7 @@
       },
       {
         "season": 9,
-        "title": "Pokémon: Battle Frontier",
+        "title": "Battle Frontier",
         "arc": "Kanto",
         "synopsis": "La Frontiera Lotta mette alla prova tattica, resistenza e spirito di squadra.",
         "episodes": 47,
@@ -91,11 +91,11 @@
     ]
   },
   {
-    "rowTitle": "Diamond & Pearl",
+    "rowTitle": "Diamante e Perla",
     "seasons": [
       {
         "season": 10,
-        "title": "Pokémon: Diamond and Pearl",
+        "title": "Pokémon - Diamante e Perla",
         "arc": "Sinnoh",
         "synopsis": "Nuova squadra e nuove tecniche in una regione ricca di miti e leggende.",
         "episodes": 52,
@@ -104,7 +104,7 @@
       },
       {
         "season": 11,
-        "title": "DP Battle Dimension",
+        "title": "DP - Battle Dimensionn",
         "arc": "Sinnoh",
         "synopsis": "La competizione si intensifica mentre i rivali affinano tattiche e strategie.",
         "episodes": 52,
@@ -113,7 +113,7 @@
       },
       {
         "season": 12,
-        "title": "DP Galactic Battles",
+        "title": "DP - Lotte Galattiche",
         "arc": "Sinnoh",
         "synopsis": "Team Galactic entra in scena e minaccia l'equilibrio dell'intera regione.",
         "episodes": 53,
@@ -122,7 +122,7 @@
       },
       {
         "season": 13,
-        "title": "DP Sinnoh League Victors",
+        "title": "DP - I vincitori della Lega di Sinnoh",
         "arc": "Sinnoh",
         "synopsis": "La Lega Sinnoh decide chi merita davvero il titolo di miglior allenatore.",
         "episodes": 34,
@@ -132,11 +132,11 @@
     ]
   },
   {
-    "rowTitle": "Black & White",
+    "rowTitle": "Nero e Bianco",
     "seasons": [
       {
         "season": 14,
-        "title": "Pokémon: Black & White",
+        "title": "Pokémon - Nero e Bianco",
         "arc": "Unima",
         "synopsis": "Ash e Pikachu partono per Unima, affrontando una regione piena di nuovi Pokémon e rivali.",
         "episodes": null,
@@ -145,7 +145,7 @@
       },
       {
         "season": 15,
-        "title": "BW: Rival Destinies",
+        "title": "Nero e Bianco - Destini Rivali",
         "arc": "Unima",
         "synopsis": "Le rivalità si intensificano mentre il cammino verso la Lega Unima entra nel vivo.",
         "episodes": null,
@@ -154,7 +154,7 @@
       },
       {
         "season": 16,
-        "title": "BW: Adventures in Unova and Beyond",
+        "title": "Nero e Bianco - Avventure a Unima e altrove",
         "arc": "Unima",
         "synopsis": "Il viaggio continua oltre Unima, tra sfide finali e nuovi incontri decisivi.",
         "episodes": null,
@@ -168,7 +168,7 @@
     "seasons": [
       {
         "season": 17,
-        "title": "Pokémon the Series: XY",
+        "title": "XY",
         "arc": "Kalos",
         "synopsis": "Ash arriva a Kalos e forma una nuova squadra per esplorare palestre e misteri della regione.",
         "episodes": null,
@@ -177,7 +177,7 @@
       },
       {
         "season": 18,
-        "title": "Pokémon the Series: XY Kalos Quest",
+        "title": "XY - Esplorazioni a Kalos",
         "arc": "Kalos",
         "synopsis": "La corsa ai badge prosegue mentre Serena insegue i suoi obiettivi nelle esibizioni Pokémon.",
         "episodes": null,
@@ -186,7 +186,7 @@
       },
       {
         "season": 19,
-        "title": "Pokémon the Series: XYZ",
+        "title": "XYZ",
         "arc": "Kalos",
         "synopsis": "La minaccia di Team Flare cresce, con sfide cruciali per il destino di Kalos.",
         "episodes": null,
@@ -196,11 +196,11 @@
     ]
   },
   {
-    "rowTitle": "Sun & Moon",
+    "rowTitle": "Sole e Luna",
     "seasons": [
       {
         "season": 20,
-        "title": "Pokémon the Series: Sun & Moon",
+        "title": "Sole e Luna",
         "arc": "Alola",
         "synopsis": "Ad Alola, Ash vive esperienze scolastiche e nuove avventure in un format diverso dal solito.",
         "episodes": null,
@@ -209,7 +209,7 @@
       },
       {
         "season": 21,
-        "title": "Pokémon the Series: Sun & Moon - Ultra Adventures",
+        "title": "Sole e Luna - Ultravventure",
         "arc": "Alola",
         "synopsis": "Le avventure si ampliano con nuove Ultracreature e sfide sempre più impegnative.",
         "episodes": null,
@@ -218,7 +218,7 @@
       },
       {
         "season": 22,
-        "title": "Pokémon the Series: Sun & Moon - Ultra Legends",
+        "title": "Sole e Luna - Utraleggende",
         "arc": "Alola",
         "synopsis": "Il percorso ad Alola si conclude con sfide epiche e il culmine della Lega locale.",
         "episodes": null,
@@ -228,11 +228,11 @@
     ]
   },
   {
-    "rowTitle": "Pokémon Journeys",
+    "rowTitle": "Esplorazioni Pokémon",
     "seasons": [
       {
         "season": 23,
-        "title": "Pokémon Journeys: The Series",
+        "title": "Esplorazioni Pokémon",
         "arc": "Mondo Pokémon",
         "synopsis": "Ash e Goh viaggiano attraverso molte regioni, incontrando Pokémon vecchi e nuovi.",
         "episodes": null,
@@ -241,7 +241,7 @@
       },
       {
         "season": 24,
-        "title": "Pokémon Master Journeys: The Series",
+        "title": "Esplorazioni Pokémon Master",
         "arc": "Mondo Pokémon",
         "synopsis": "La scalata nel World Coronation Series prosegue con incontri sempre più prestigiosi.",
         "episodes": null,
@@ -250,10 +250,10 @@
       },
       {
         "season": 25,
-        "title": "Pokémon Ultimate Journeys: The Series",
+        "title": "Esplorazioni Pokémon Super",
         "arc": "Mondo Pokémon",
         "synopsis": "Il cammino di Ash verso il vertice mondiale arriva alle battaglie finali decisive.",
-        "episodes": null,
+        "episodes": 54,
         "years": "2021-2023",
         "accent": "from-fuchsia-600/90"
       }
