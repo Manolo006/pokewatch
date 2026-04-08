@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { get, ref } from "firebase/database";
 import ProfilePage from "../page";
 import { useAuth } from "@/app/components/AuthProvider";
-import { db } from "@/appncib/firebase";
+import { db } from "@/app/lib/firebase";
 
 type PublicProfileClientProps = {
   params: Promise<{ username: string }>;

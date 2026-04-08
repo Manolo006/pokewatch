@@ -12,6 +12,11 @@ export default function LostPasswordPage() {
   const [loading, setLoading] = useState(false);
 
   const handleSendReset = async () => {
+    if (!auth) {
+      setMessage("Servizio di autenticazione non disponibile. Riprova tra poco.");
+      return;
+    }
+
     const normalizedEmail = email.trim();
     if (!normalizedEmail) {
       setMessage("Inserisci la tua email.");
