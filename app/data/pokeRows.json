@@ -260,11 +260,11 @@
     ]
   },
   {
-    "rowTitle": "Pokémon Orizonti: La serie",
+    "rowTitle": "Pokémon Orizonti - La Serie",
     "seasons": [
         {
           "season": 26,
-          "title": "Pokémon Orizonti: The Series",
+          "title": "Pokémon Orizonti - La Serie",
           "arc": "Paldea e oltre",
           "synopsis": "Una nuova generazione di protagonisti esplora il mondo Pokémon con un viaggio inedito.",
           "episodes": 45,
@@ -273,7 +273,7 @@
         },
         {
           "season": 27,
-          "title": "Pokémon Orizonti: Alla ricerca di Laqua",
+          "title": "Pokémon Orizonti - Alla ricerca di Laqua",
           "arc": "Paldea e oltre",
           "synopsis": "Le avventure continuano con nuove sfide, Pokémon e misteri da svelare.",
           "episodes": 44,
@@ -282,7 +282,7 @@
         },
         {
           "season": 28,
-          "title": "Pokémon Orizonti: The Series - Leggende e Oltre",
+          "title": "Pokémon Orizonti - The Series - Leggende e Oltre",
           "arc": "Paldea e oltre",
           "synopsis": "Il viaggio si arricchisce di leggende, sfide epiche e incontri indimenticabili.",
           "episodes": null,
