@@ -71,7 +71,7 @@ export default async function SeasonPage({ params }: SeasonPageProps) {
   return (
     <div className="min-h-screen bg-[#141414] text-white">
       <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-[1200px] items-center justify-between px-4 py-4 sm:px-8">
+        <div className="mx-auto flex w-full max-w-300 items-center justify-between px-4 py-4 sm:px-8">
           <Link
             href="/"
             className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-2 text-sm font-semibold transition hover:bg-white/20"
@@ -82,7 +82,7 @@ export default async function SeasonPage({ params }: SeasonPageProps) {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1200px] px-4 py-8 sm:px-8 sm:py-10">
+      <main className="mx-auto w-full max-w-300 px-4 py-8 sm:px-8 sm:py-10">
         <section className="overflow-hidden rounded-xl border border-white/10 bg-zinc-900/80">
           <SeasonHeroThumbnail
             seasonNumber={selectedSeason.season}
