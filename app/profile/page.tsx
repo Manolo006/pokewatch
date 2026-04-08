@@ -17,7 +17,7 @@ import {
   verifyBeforeUpdateEmail,
 } from "firebase/auth";
 import { get, ref, remove, set, update } from "firebase/database";
-import { FaChevronLeft, FaChevronRight, FaEye, FaEyeSlash, FaPen, FaTrash } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight, FaEye, FaEyeSlash, FaPen, FaSave, FaTrash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { useAuth } from "@/app/components/AuthProvider";
 import AuthHeaderActions from "@/app/components/AuthHeaderActions";
@@ -29,7 +29,20 @@ type EpisodeFillerType = "non-filler" | "filler" | "misto";
 type OwnProfileSettings = {
   username: string;
   displayName: string;
+  bio?: string;
   joinedAt: string | null;
+  profileImageUrl?: string | null;
+  profileImageBgColor?: string | null;
+};
+
+type SpriteCategory = "pokemon" | "items" | "berries";
+
+type SpriteOption = {
+  id: string;
+  name: string;
+  imageUrl: string;
+  category: SpriteCategory;
+  pokemonDexId?: number;
 };
 
 const FILLER_STORAGE_PREFIX = "pokewatch-filler-season";
@@ -185,6 +198,13 @@ function formatJoinDay(value?: string | null) {
   }).format(date);
 }
 
+function formatSpriteLabel(name: string) {
+  return name
+    .split("-")
+    .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
+    .join(" ");
+}
+
 const getSeasonImageCandidates = (seasonNumber: number) => [
   `/seasons/s${seasonNumber}.jpg`,
   `/seasons/s${seasonNumber}.jpeg`,
@@ -298,6 +318,14 @@ export default function ProfilePage({
   const isGoogleLinked = Boolean(user?.providerData?.some((provider) => provider.providerId === "google.com"));
   const ownDisplayName = ownProfileSettings?.displayName || user?.displayName?.trim() || getDisplayName(user?.email);
   const ownUsername = ownProfileSettings?.username || getUserSlug(user?.email);
+  const normalizedEditedNickname = normalizeNickname(editNickname);
+  const trimmedEditedDisplayName = editDisplayName.trim();
+  const trimmedEditedBio = bioDraft.trim();
+  const ownBio = ownProfileSettings?.bio?.trim() ?? "";
+  const hasDisplayNameChange = trimmedEditedDisplayName !== ownDisplayName;
+  const hasNicknameChange = normalizedEditedNickname !== ownUsername;
+  const hasBioChange = trimmedEditedBio !== ownBio;
+  const hasUnsavedProfileChanges = hasDisplayNameChange || hasNicknameChange || hasBioChange;
   const displayName = publicDisplayName ?? ownDisplayName;
   const usernameLabel = publicUsername ?? ownUsername;
   const isPublicView = Boolean(viewedUserId && viewedUserId !== user?.uid);
@@ -312,6 +340,21 @@ export default function ProfilePage({
     if (typeof window === "undefined") return {};
     return parseStoredFillerBySeason(window.localStorage);
   });
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
+  const [avatarCategory, setAvatarCategory] = useState<SpriteCategory>("pokemon");
+  const [pokemonSprites, setPokemonSprites] = useState<SpriteOption[]>([]);
+  const [itemSprites, setItemSprites] = useState<SpriteOption[]>([]);
+  const [berrySprites, setBerrySprites] = useState<SpriteOption[]>([]);
+  const [isLoadingAvatarSprites, setIsLoadingAvatarSprites] = useState(false);
+  const [avatarSpritesError, setAvatarSpritesError] = useState<string | null>(null);
+  const [isSavingProfileImage, setIsSavingProfileImage] = useState(false);
+  const [isSavingProfileBackground, setIsSavingProfileBackground] = useState(false);
+  const [profileImageBgColor, setProfileImageBgColor] = useState("#e50914");
+  const [avatarSearchQuery, setAvatarSearchQuery] = useState("");
+  const [pokemonSearchResults, setPokemonSearchResults] = useState<SpriteOption[]>([]);
+  const [isSearchingPokemon, setIsSearchingPokemon] = useState(false);
+  const [pokemonSearchError, setPokemonSearchError] = useState<string | null>(null);
 
   const formatNumber = new Intl.NumberFormat("it-IT");
 
@@ -335,15 +378,24 @@ export default function ProfilePage({
       const value = (snapshot.val() as Partial<OwnProfileSettings> | null) ?? null;
       const username = value?.username || getUserSlug(user.email);
       const display = value?.displayName || user.displayName?.trim() || getDisplayName(user.email);
+      const bio = value?.bio?.trim() ?? "";
       const joinedAt = value?.joinedAt ?? user.metadata.creationTime ?? null;
+      const profileImage = value?.profileImageUrl ?? null;
+      const profileBgColor = value?.profileImageBgColor ?? "#e50914";
 
       setOwnProfileSettings({
         username,
         displayName: display,
+        bio,
         joinedAt,
+        profileImageUrl: profileImage,
+        profileImageBgColor: profileBgColor,
       });
       setEditNickname(username);
       setEditDisplayName(display);
+      setBioDraft(bio);
+      setProfileImageUrl(profileImage);
+      setProfileImageBgColor(profileBgColor);
     };
 
     void loadOwnProfileSettings();
@@ -473,14 +525,224 @@ export default function ProfilePage({
     };
   }, [passwordSecurityError]);
 
-  const saveProfileBasics = async () => {
+  useEffect(() => {
+    if (!isAvatarPickerOpen) return;
+    if (pokemonSprites.length > 0 && itemSprites.length > 0 && berrySprites.length > 0) return;
+
+    let active = true;
+
+    const loadAvatarSprites = async () => {
+      setAvatarSpritesError(null);
+      setIsLoadingAvatarSprites(true);
+
+      try {
+        const [pokemonResponse, itemsResponse, berriesResponse] = await Promise.all([
+          fetch("https://pokeapi.co/api/v2/pokemon?limit=60"),
+          fetch("https://pokeapi.co/api/v2/item?limit=80"),
+          fetch("https://pokeapi.co/api/v2/berry?limit=45"),
+        ]);
+
+        if (!pokemonResponse.ok || !itemsResponse.ok || !berriesResponse.ok) {
+          throw new Error("fetch_failed");
+        }
+
+        const pokemonData = (await pokemonResponse.json()) as {
+          results: Array<{ name: string; url: string }>;
+        };
+        const itemsData = (await itemsResponse.json()) as {
+          results: Array<{ name: string }>;
+        };
+        const berriesData = (await berriesResponse.json()) as {
+          results: Array<{ name: string }>;
+        };
+
+        if (!active) return;
+
+        const nextPokemonSprites: SpriteOption[] = pokemonData.results
+          .map((entry) => {
+            const idMatch = entry.url.match(/\/pokemon\/(\d+)\/$/);
+            const pokemonId = idMatch ? Number(idMatch[1]) : null;
+            if (!pokemonId) return null;
+
+            return {
+              id: `pokemon-${pokemonId}`,
+              name: entry.name,
+              imageUrl: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`,
+              category: "pokemon" as const,
+              pokemonDexId: pokemonId,
+            } as SpriteOption;
+          })
+          .filter((sprite): sprite is SpriteOption => sprite !== null);
+
+        const nextItemSprites: SpriteOption[] = itemsData.results.map((entry, index) => ({
+          id: `item-${entry.name}-${index}`,
+          name: entry.name,
+          imageUrl: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${entry.name}.png`,
+          category: "items",
+        }));
+
+        const nextBerrySprites: SpriteOption[] = berriesData.results.map((entry, index) => ({
+          id: `berry-${entry.name}-${index}`,
+          name: entry.name,
+          imageUrl: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${entry.name}-berry.png`,
+          category: "berries",
+        }));
+
+        setPokemonSprites(nextPokemonSprites);
+        setItemSprites(nextItemSprites);
+        setBerrySprites(nextBerrySprites);
+      } catch {
+        if (!active) return;
+        setAvatarSpritesError("Non sono riuscito a caricare gli sprite da PokéAPI. Riprova tra poco.");
+      } finally {
+        if (!active) return;
+        setIsLoadingAvatarSprites(false);
+      }
+    };
+
+    void loadAvatarSprites();
+
+    return () => {
+      active = false;
+    };
+  }, [isAvatarPickerOpen, pokemonSprites.length, itemSprites.length, berrySprites.length]);
+
+  useEffect(() => {
+    if (!isAvatarPickerOpen || avatarCategory !== "pokemon") {
+      setPokemonSearchResults([]);
+      setPokemonSearchError(null);
+      setIsSearchingPokemon(false);
+      return;
+    }
+
+    const rawQuery = avatarSearchQuery.trim().toLowerCase();
+    if (!rawQuery) {
+      setPokemonSearchResults([]);
+      setPokemonSearchError(null);
+      setIsSearchingPokemon(false);
+      return;
+    }
+
+    let active = true;
+
+    const loadPokemonWithEvolution = async () => {
+      setPokemonSearchError(null);
+      setIsSearchingPokemon(true);
+
+      try {
+        const basePokemonResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${rawQuery}`);
+        if (!basePokemonResponse.ok) {
+          throw new Error("pokemon_not_found");
+        }
+
+        const basePokemon = (await basePokemonResponse.json()) as { id: number; name: string };
+        const speciesResponse = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${basePokemon.id}`);
+
+        if (!speciesResponse.ok) {
+          throw new Error("species_not_found");
+        }
+
+        const speciesData = (await speciesResponse.json()) as {
+          evolution_chain?: { url?: string };
+        };
+
+        const evolutionChainUrl = speciesData.evolution_chain?.url;
+        if (!evolutionChainUrl) {
+          throw new Error("evolution_chain_not_found");
+        }
+
+        const evolutionResponse = await fetch(evolutionChainUrl);
+        if (!evolutionResponse.ok) {
+          throw new Error("evolution_fetch_failed");
+        }
+
+        const evolutionData = (await evolutionResponse.json()) as {
+          chain: {
+            species: { name: string };
+            evolves_to: Array<unknown>;
+          };
+        };
+
+        const evolutionNames: string[] = [];
+        const walkEvolutionTree = (node: { species: { name: string }; evolves_to: Array<unknown> }) => {
+          evolutionNames.push(node.species.name);
+          node.evolves_to.forEach((nextNode) => {
+            if (!nextNode || typeof nextNode !== "object") return;
+            walkEvolutionTree(nextNode as { species: { name: string }; evolves_to: Array<unknown> });
+          });
+        };
+
+        walkEvolutionTree(evolutionData.chain);
+
+        const uniqueEvolutionNames = Array.from(new Set(evolutionNames));
+        const evolutionPokemonResponses = await Promise.all(
+          uniqueEvolutionNames.map(async (pokemonName) => {
+            const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonName}`);
+            if (!response.ok) return null;
+
+            const data = (await response.json()) as { id: number; name: string };
+            return data;
+          })
+        );
+
+        if (!active) return;
+
+        const nextResults: SpriteOption[] = evolutionPokemonResponses
+          .filter((pokemon): pokemon is { id: number; name: string } => Boolean(pokemon))
+          .sort((first, second) => first.id - second.id)
+          .map((pokemon) => ({
+            id: `pokemon-search-${pokemon.id}`,
+            name: pokemon.name,
+            imageUrl: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`,
+            category: "pokemon",
+            pokemonDexId: pokemon.id,
+          }));
+
+        setPokemonSearchResults(nextResults);
+      } catch {
+        if (!active) return;
+        setPokemonSearchResults([]);
+        setPokemonSearchError("Nessun Pokémon trovato con questa ricerca.");
+      } finally {
+        if (!active) return;
+        setIsSearchingPokemon(false);
+      }
+    };
+
+    void loadPokemonWithEvolution();
+
+    return () => {
+      active = false;
+    };
+  }, [avatarCategory, avatarSearchQuery, isAvatarPickerOpen]);
+
+  const saveProfileBasics = async (scope: "all" | "displayName" | "nickname" = "all") => {
     if (!user || !db) return;
+
+    if (scope === "displayName" && !hasDisplayNameChange) {
+      setProfileError(null);
+      setProfileMessage("Nessuna modifica al display name da salvare.");
+      return;
+    }
+
+    if (scope === "nickname" && !hasNicknameChange) {
+      setProfileError(null);
+      setProfileMessage("Nessuna modifica al nickname da salvare.");
+      return;
+    }
+
+    if (scope === "all" && !hasUnsavedProfileChanges) {
+      setProfileError(null);
+      setProfileMessage("Nessuna modifica da salvare.");
+      return;
+    }
 
     setProfileError(null);
     setProfileMessage(null);
 
-    const normalizedNickname = normalizeNickname(editNickname);
-    const trimmedDisplayName = editDisplayName.trim();
+    const normalizedNickname = scope === "displayName" ? ownUsername : normalizeNickname(editNickname);
+    const trimmedDisplayName = scope === "nickname" ? ownDisplayName : editDisplayName.trim();
+    const nextBio = bioDraft.trim();
 
     if (normalizedNickname.length < 3) {
       setProfileError("Il nickname deve avere almeno 3 caratteri validi (a-z, 0-9, . _ -).");
@@ -514,7 +776,10 @@ export default function ProfilePage({
       const nextSettings: OwnProfileSettings = {
         username: normalizedNickname,
         displayName: trimmedDisplayName,
+        bio: nextBio,
         joinedAt,
+        profileImageUrl,
+        profileImageBgColor,
       };
 
       await set(ref(db, `users/${user.uid}/publicProfile`), nextSettings);
@@ -522,7 +787,10 @@ export default function ProfilePage({
         uid: user.uid,
         username: normalizedNickname,
         displayName: trimmedDisplayName,
+        bio: nextBio,
         joinedAt,
+        profileImageUrl,
+        profileImageBgColor,
       });
 
       if (normalizedNickname !== currentUsername) {
@@ -530,12 +798,105 @@ export default function ProfilePage({
       }
 
       setOwnProfileSettings(nextSettings);
+      setEditDisplayName(trimmedDisplayName);
       setEditNickname(normalizedNickname);
+      setBioDraft(nextBio);
       setProfileMessage("Profilo aggiornato con successo.");
     } catch {
       setProfileError("Non sono riuscito a salvare il profilo. Riprova.");
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const handleSelectProfileImage = async (spriteUrl: string | null) => {
+    setProfileError(null);
+    setProfileMessage(null);
+    setProfileImageUrl(spriteUrl);
+
+    if (!user || !db || isPublicView) {
+      setProfileMessage("Immagine profilo aggiornata localmente.");
+      return;
+    }
+
+    setIsSavingProfileImage(true);
+
+    try {
+      const username = ownProfileSettings?.username || getUserSlug(user.email);
+      const display = ownProfileSettings?.displayName || ownDisplayName;
+      const bio = ownProfileSettings?.bio?.trim() ?? bioDraft.trim();
+      const joinedAt = ownProfileSettings?.joinedAt ?? user.metadata.creationTime ?? null;
+
+      await update(ref(db, `users/${user.uid}/publicProfile`), {
+        profileImageUrl: spriteUrl,
+        profileImageBgColor,
+        bio,
+      });
+
+      await update(ref(db, `publicProfiles/${username}`), {
+        uid: user.uid,
+        username,
+        displayName: display,
+        bio,
+        joinedAt,
+        profileImageUrl: spriteUrl,
+        profileImageBgColor,
+      });
+
+      setOwnProfileSettings((prev) => ({
+        username: prev?.username || username,
+        displayName: prev?.displayName || display,
+        bio: prev?.bio ?? bio,
+        joinedAt: prev?.joinedAt ?? joinedAt,
+        profileImageUrl: spriteUrl,
+        profileImageBgColor,
+      }));
+
+      setProfileMessage("Immagine profilo aggiornata con successo.");
+      setIsAvatarPickerOpen(false);
+    } catch {
+      setProfileError("Impossibile salvare l'immagine profilo. Riprova.");
+    } finally {
+      setIsSavingProfileImage(false);
+    }
+  };
+
+  const handleSelectProfileBackgroundColor = async (nextColor: string) => {
+    setProfileImageBgColor(nextColor);
+
+    if (!user || !db || isPublicView) return;
+
+    setIsSavingProfileBackground(true);
+    try {
+      const username = ownProfileSettings?.username || getUserSlug(user.email);
+      const display = ownProfileSettings?.displayName || ownDisplayName;
+      const bio = ownProfileSettings?.bio?.trim() ?? bioDraft.trim();
+      const joinedAt = ownProfileSettings?.joinedAt ?? user.metadata.creationTime ?? null;
+
+      await update(ref(db, `users/${user.uid}/publicProfile`), {
+        profileImageBgColor: nextColor,
+      });
+
+      await update(ref(db, `publicProfiles/${username}`), {
+        uid: user.uid,
+        username,
+        displayName: display,
+        bio,
+        joinedAt,
+        profileImageUrl,
+        profileImageBgColor: nextColor,
+      });
+
+      setOwnProfileSettings((prev) => ({
+        username: prev?.username || username,
+        displayName: prev?.displayName || display,
+        bio: prev?.bio ?? bio,
+        joinedAt: prev?.joinedAt ?? joinedAt,
+        profileImageUrl,
+        profileImageBgColor: nextColor,
+      }));
+    } finally {
+      setIsSavingProfileBackground(false);
     }
   };
 
@@ -897,6 +1258,166 @@ export default function ProfilePage({
   const maxCarouselStart = Math.max(0, seasonProgress.length - 3);
   const normalizedCarouselStart = Math.min(seasonCarouselStart, maxCarouselStart);
   const visibleSeasonCards = seasonProgress.slice(normalizedCarouselStart, normalizedCarouselStart + 3);
+  const searchValue = avatarSearchQuery.trim().toLowerCase();
+  const pokemonSearchByNameOrDex = pokemonSprites.filter((sprite) => {
+    if (!searchValue) return true;
+    const nameMatch = sprite.name.toLowerCase().includes(searchValue);
+    const dexMatch = String(sprite.pokemonDexId ?? "").includes(searchValue);
+    return nameMatch || dexMatch;
+  });
+  const filteredItemSprites = itemSprites.filter((sprite) => {
+    if (!searchValue) return true;
+    return sprite.name.toLowerCase().includes(searchValue);
+  });
+  const filteredBerrySprites = berrySprites.filter((sprite) => {
+    if (!searchValue) return true;
+    return sprite.name.toLowerCase().includes(searchValue);
+  });
+  const activeAvatarSprites =
+    avatarCategory === "pokemon"
+      ? searchValue
+        ? pokemonSearchResults.length > 0
+          ? pokemonSearchResults
+          : pokemonSearchByNameOrDex
+        : pokemonSprites
+      : avatarCategory === "items"
+        ? filteredItemSprites
+        : filteredBerrySprites;
+  const avatarPickerModal = isAvatarPickerOpen ? (
+    <div
+      className="fixed inset-0 z-70 flex items-center justify-center bg-black/75 p-3 sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      onClick={() => setIsAvatarPickerOpen(false)}
+    >
+      <div
+        className="max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-md border border-white/15 bg-[#181818] shadow-2xl shadow-black/70"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-5">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/55">Immagine profilo</p>
+            <h3 className="text-lg font-black sm:text-xl">Scegli uno sprite da PokéAPI</h3>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsAvatarPickerOpen(false)}
+            className="rounded border border-white/20 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/10"
+          >
+            Chiudi
+          </button>
+        </div>
+
+        <div className="border-b border-white/10 px-4 py-3 sm:px-5">
+          <div className="flex flex-wrap gap-2">
+            {([
+              ["pokemon", "Pokémon"],
+              ["items", "Oggetti"],
+              ["berries", "Bacche"],
+            ] as const).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setAvatarCategory(key)}
+                className={`rounded border px-3 py-1.5 text-xs font-semibold transition ${
+                  avatarCategory === key
+                    ? "border-[#e50914] bg-[#e50914]/20 text-white"
+                    : "border-white/20 text-white/80 hover:bg-white/10"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+
+            <input
+              type="text"
+              value={avatarSearchQuery}
+              onChange={(event) => setAvatarSearchQuery(event.target.value)}
+              placeholder={
+                avatarCategory === "pokemon"
+                  ? "Cerca Pokémon (nome o Pokédex ID)"
+                  : avatarCategory === "items"
+                    ? "Cerca oggetto"
+                    : "Cerca bacca"
+              }
+              className="min-w-56 flex-1 rounded border border-white/20 bg-black/30 px-3 py-1.5 text-xs text-white outline-none ring-[#e50914] focus:ring-1"
+            />
+
+            <button
+              type="button"
+              onClick={() => void handleSelectProfileImage(null)}
+              className="rounded border border-rose-400/35 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-200 transition hover:bg-rose-500/20"
+            >
+              Rimuovi immagine
+            </button>
+
+            <div className="flex items-center gap-2 rounded border border-white/10 bg-black/20 px-2 py-1">
+              {[
+                "#e50914",
+                "#2563eb",
+                "#059669",
+                "#a855f7",
+                "#f59e0b",
+                "#111827",
+              ].map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => void handleSelectProfileBackgroundColor(color)}
+                  disabled={isSavingProfileBackground}
+                  aria-label={`Sfondo ${color}`}
+                  className={`h-5 w-5 rounded-full border ${profileImageBgColor === color ? "border-white" : "border-white/30"}`}
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+              <input
+                type="color"
+                value={profileImageBgColor}
+                onChange={(event) => void handleSelectProfileBackgroundColor(event.target.value)}
+                disabled={isSavingProfileBackground}
+                className="h-5 w-7 rounded border border-white/30 bg-transparent p-0"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="max-h-[62vh] overflow-y-auto p-4 sm:p-5">
+          {avatarSpritesError ? <p className="text-sm text-rose-300">{avatarSpritesError}</p> : null}
+          {isLoadingAvatarSprites ? <p className="text-sm text-white/70">Carico sprite da PokéAPI...</p> : null}
+          {avatarCategory === "pokemon" && isSearchingPokemon ? <p className="text-sm text-white/70">Ricerca Pokémon...</p> : null}
+          {avatarCategory === "pokemon" && pokemonSearchError ? <p className="text-sm text-rose-300">{pokemonSearchError}</p> : null}
+
+          {!isLoadingAvatarSprites && !avatarSpritesError ? (
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
+              {activeAvatarSprites.map((sprite) => (
+                <button
+                  key={sprite.id}
+                  type="button"
+                  onClick={() => void handleSelectProfileImage(sprite.imageUrl)}
+                  disabled={isSavingProfileImage}
+                  className={`group rounded border p-2 text-center transition ${
+                    profileImageUrl === sprite.imageUrl
+                      ? "border-[#e50914] bg-[#e50914]/15"
+                      : "border-white/15 bg-black/25 hover:border-white/35 hover:bg-white/5"
+                  }`}
+                >
+                  <img
+                    src={sprite.imageUrl}
+                    alt={sprite.name}
+                    loading="lazy"
+                    className="mx-auto h-12 w-12 object-contain sm:h-14 sm:w-14"
+                  />
+                  <p className="mt-1 line-clamp-1 text-[10px] font-semibold text-white/75 group-hover:text-white">
+                    {formatSpriteLabel(sprite.name)}
+                  </p>
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   if (manageMode) {
     return (
@@ -919,10 +1440,10 @@ export default function ProfilePage({
               <button
                 type="button"
                 onClick={() => void saveProfileBasics()}
-                disabled={isSavingProfile}
+                disabled={isSavingProfile || !hasUnsavedProfileChanges}
                 className="rounded bg-[#e50914] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#f6121d] disabled:opacity-60"
               >
-                {isSavingProfile ? "Salvataggio..." : "Salva profilo"}
+                {isSavingProfile ? "Salvataggio..." : "Salva modifiche"}
               </button>
             </div>
           </div>
@@ -957,26 +1478,52 @@ export default function ProfilePage({
               <div className="mt-5 grid gap-4 md:grid-cols-2">
                 <label className="text-xs text-white/70">
                   Display name
-                  <div className="mt-1 flex items-center gap-2 rounded border border-white/20 bg-black/35 px-3 py-2">
-                    <FaPen size={12} className="text-white/60" />
-                    <input
-                      value={editDisplayName}
-                      onChange={(event) => setEditDisplayName(event.target.value)}
-                      className="w-full bg-transparent text-sm font-semibold text-white outline-none"
-                    />
+                  <div className="relative mt-1 rounded border border-white/20 bg-black/35 px-3 py-2">
+                    <div className="flex items-center gap-2 pr-8">
+                      <FaPen size={12} className="text-white/60" />
+                      <input
+                        value={editDisplayName}
+                        onChange={(event) => setEditDisplayName(event.target.value)}
+                        className="w-full bg-transparent text-sm font-semibold text-white outline-none"
+                      />
+                    </div>
+                    {hasDisplayNameChange ? (
+                      <button
+                        type="button"
+                        onClick={() => void saveProfileBasics("displayName")}
+                        disabled={isSavingProfile}
+                        aria-label="Salva display name"
+                        className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded border border-white/25 bg-black/50 text-white transition hover:bg-white/10 disabled:opacity-60"
+                      >
+                        {isSavingProfile ? "..." : <FaSave size={12} />}
+                      </button>
+                    ) : null}
                   </div>
                 </label>
 
                 <label className="text-xs text-white/70">
                   Nickname
-                  <div className="mt-1 flex items-center gap-2 rounded border border-white/20 bg-black/35 px-3 py-2">
-                    <FaPen size={12} className="text-white/60" />
-                    <span className="text-white/50">@</span>
-                    <input
-                      value={editNickname}
-                      onChange={(event) => setEditNickname(event.target.value)}
-                      className="w-full bg-transparent text-sm font-semibold text-white outline-none"
-                    />
+                  <div className="relative mt-1 rounded border border-white/20 bg-black/35 px-3 py-2">
+                    <div className="flex items-center gap-2 pr-8">
+                      <FaPen size={12} className="text-white/60" />
+                      <span className="text-white/50">@</span>
+                      <input
+                        value={editNickname}
+                        onChange={(event) => setEditNickname(event.target.value)}
+                        className="w-full bg-transparent text-sm font-semibold text-white outline-none"
+                      />
+                    </div>
+                    {hasNicknameChange ? (
+                      <button
+                        type="button"
+                        onClick={() => void saveProfileBasics("nickname")}
+                        disabled={isSavingProfile}
+                        aria-label="Salva nickname"
+                        className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded border border-white/25 bg-black/50 text-white transition hover:bg-white/10 disabled:opacity-60"
+                      >
+                        {isSavingProfile ? "..." : <FaSave size={12} />}
+                      </button>
+                    ) : null}
                   </div>
                 </label>
               </div>
@@ -995,18 +1542,30 @@ export default function ProfilePage({
 
                 <div className="rounded border border-white/15 bg-black/25 p-3 text-center">
                   <p className="text-[11px] uppercase tracking-[0.14em] text-white/55">Immagine profilo</p>
-                  <div className="mx-auto mt-3 flex h-16 w-16 items-center justify-center rounded-full border border-white/25 bg-linear-to-br from-[#e50914] to-[#66070d] text-xl font-black">
-                    {displayName.charAt(0)}
+                  <div
+                    className="mx-auto mt-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-white/25 text-xl font-black"
+                    style={{ backgroundColor: profileImageBgColor }}
+                  >
+                    {profileImageUrl ? (
+                      <img src={profileImageUrl} alt="Immagine profilo" className="h-full w-full object-cover" loading="lazy" />
+                    ) : (
+                      displayName.charAt(0)
+                    )}
                   </div>
                   <button
                     type="button"
-                    onClick={() => setProfileMessage("Cambio immagine profilo in arrivo.")}
+                    onClick={() => setIsAvatarPickerOpen(true)}
+                    disabled={isSavingProfileImage}
                     className="mt-3 w-full rounded border border-white/20 px-3 py-2 text-xs font-semibold text-white/90 transition hover:bg-white/10"
                   >
-                    Cambia immagine
+                    {isSavingProfileImage ? "Salvataggio..." : "Cambia immagine"}
                   </button>
                 </div>
               </div>
+
+              {hasUnsavedProfileChanges ? (
+                <p className="mt-3 text-xs text-amber-200">Hai modifiche non salvate: premi “Salva modifiche” per applicarle.</p>
+              ) : null}
 
               {profileError ? <p className="mt-3 text-xs text-rose-300">{profileError}</p> : null}
               {profileMessage ? <p className="mt-3 text-xs text-emerald-300">{profileMessage}</p> : null}
@@ -1180,7 +1739,7 @@ export default function ProfilePage({
                   <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm font-semibold text-white">Google</p>
-                      <p className="mt-1 text-xs text-white/65">Sincronizza o scollega il provider Google per l'accesso rapido.</p>
+                      <p className="mt-1 text-xs text-white/65">Sincronizza o scollega il provider Google per l&apos;accesso rapido.</p>
                     </div>
                     {!isGoogleLinked ? (
                       <button
@@ -1249,6 +1808,8 @@ export default function ProfilePage({
             ) : null}
           </section>
         </main>
+
+        {avatarPickerModal}
       </div>
     );
   }
@@ -1301,7 +1862,16 @@ export default function ProfilePage({
               </div>
 
               <div className="relative px-5 pb-6 pt-10 sm:px-8 sm:pb-8 sm:pt-12">
-                <div className="absolute -top-12 left-1/2 flex h-24 w-24 -translate-x-1/2 items-center justify-center rounded border border-white/20 bg-linear-to-br from-[#e50914] to-[#66070d] text-4xl font-black text-white shadow-xl sm:h-28 sm:w-28">{displayName.charAt(0)}</div>
+                <div
+                  className="absolute -top-12 left-1/2 flex h-24 w-24 -translate-x-1/2 items-center justify-center overflow-hidden rounded border border-white/20 text-4xl font-black text-white shadow-xl sm:h-28 sm:w-28"
+                  style={{ backgroundColor: profileImageBgColor }}
+                >
+                  {profileImageUrl ? (
+                    <img src={profileImageUrl} alt="Immagine profilo" className="h-full w-full object-cover" loading="lazy" />
+                  ) : (
+                    displayName.charAt(0)
+                  )}
+                </div>
 
                 <div className="flex flex-col items-center gap-4 pt-12 text-center sm:pt-10">
                   <div>
@@ -1354,10 +1924,10 @@ export default function ProfilePage({
                           <button
                             type="button"
                             onClick={() => void saveProfileBasics()}
-                            disabled={isSavingProfile}
+                            disabled={isSavingProfile || !hasUnsavedProfileChanges}
                             className="rounded border border-white/25 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10 disabled:opacity-60"
                           >
-                            {isSavingProfile ? "Salvataggio..." : "Salva profilo"}
+                            {isSavingProfile ? "Salvataggio..." : "Salva modifiche"}
                           </button>
                         ) : null}
                         {manageMode ? (
@@ -1676,6 +2246,8 @@ export default function ProfilePage({
           </div>
         )}
       </main>
+
+      {avatarPickerModal}
 
       {selectedSeasonDetail ? (
         <div
