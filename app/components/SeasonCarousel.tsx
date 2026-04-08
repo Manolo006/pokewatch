@@ -441,12 +441,16 @@ export default function SeasonCarousel({ seasons, enableTrendVoting = false }: S
         const deltaX = Math.abs(touch.clientX - touchStartRef.current.x);
         const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
 
-        if (deltaX > 8 && deltaX > deltaY) {
+        if (deltaX > 12 && deltaX > deltaY + 8) {
           swipeGestureRef.current = true;
         }
       }}
       onTouchEnd={() => {
         touchStartRef.current = null;
+      }}
+      onTouchCancel={() => {
+        touchStartRef.current = null;
+        swipeGestureRef.current = false;
       }}
       onClick={(event) => {
         if (swipeGestureRef.current) {
@@ -461,7 +465,6 @@ export default function SeasonCarousel({ seasons, enableTrendVoting = false }: S
         minWidth: `${cardWidth}px`,
         maxWidth: `${cardWidth}px`,
         height: `${cardHeight}px`,
-        touchAction: useTouchCarousel ? "pan-x" : "auto",
       }}
       className={`group relative flex shrink-0 flex-col overflow-hidden rounded-md border border-white/10 bg-zinc-900 transition duration-300 hover:-translate-y-1 hover:border-white/25 ${
         isMobileView ? "snap-start active:scale-[0.99]" : ""
@@ -530,7 +533,7 @@ export default function SeasonCarousel({ seasons, enableTrendVoting = false }: S
 
   if (!isCarouselEnabled || useTouchCarousel) {
     return (
-      <div className="netflix-scroll mobile-carousel-scroll flex gap-3 overflow-x-auto px-1 py-3 sm:gap-4" style={{ touchAction: "pan-x" }}>
+      <div className="netflix-scroll mobile-carousel-scroll flex gap-3 overflow-x-auto px-1 py-3 sm:gap-4">
         {seasons.map((season) => (
           renderSeasonCard(season, String(season.season))
         ))}
