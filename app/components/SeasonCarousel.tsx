@@ -181,7 +181,8 @@ function SeasonThumbnail({ seasonNumber, title, arc, accent }: SeasonThumbnailPr
           alt={title}
           loading="lazy"
           decoding="async"
-          className="absolute inset-0 h-full w-full object-cover"
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+          draggable={false}
         />
       ) : (
         <div className={`absolute inset-0 bg-gradient-to-br ${accent} via-slate-700 to-black`} />
@@ -201,6 +202,8 @@ function SeasonThumbnail({ seasonNumber, title, arc, accent }: SeasonThumbnailPr
 
 export default function SeasonCarousel({ seasons, enableTrendVoting = false }: SeasonCarouselProps) {
   const { user } = useAuth();
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const swipeGestureRef = useRef(false);
   const viewportRef = useRef<HTMLDivElement>(null);
   const lastClickRef = useRef(0);
   const totalItems = seasons.length;
@@ -341,12 +344,12 @@ export default function SeasonCarousel({ seasons, enableTrendVoting = false }: S
       const w = window.innerWidth;
 
       if (w <= 480) {
-        const responsiveWidth = Math.max(220, Math.min(280, Math.round(w * 0.78)));
+        const responsiveWidth = Math.max(180, Math.min(240, Math.round(w * 0.66)));
         setCardWidth(responsiveWidth);
-        setCardHeight(Math.round(responsiveWidth * 1.38));
+        setCardHeight(Math.round(responsiveWidth * 1.3));
       } else if (w <= MOBILE_BREAKPOINT) {
-        setCardWidth(250);
-        setCardHeight(330);
+        setCardWidth(220);
+        setCardHeight(300);
       } else {
         setCardWidth(STANDARD_CARD_WIDTH);
         setCardHeight(STANDARD_CARD_HEIGHT);
@@ -403,6 +406,8 @@ export default function SeasonCarousel({ seasons, enableTrendVoting = false }: S
     setCurrentIndex((prev) => prev - 1);
   };
 
+  const useTouchCarousel = isMobileView || isTouchInput;
+
   const handleTransitionEnd = () => {
     if (!isCarouselEnabled) return;
 
@@ -425,7 +430,30 @@ export default function SeasonCarousel({ seasons, enableTrendVoting = false }: S
     <Link
       key={key}
       href={`/stagione/${season.season}`}
-      onClick={() => {
+      onTouchStart={(event) => {
+        const touch = event.touches[0];
+        touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+        swipeGestureRef.current = false;
+      }}
+      onTouchMove={(event) => {
+        if (!touchStartRef.current) return;
+        const touch = event.touches[0];
+        const deltaX = Math.abs(touch.clientX - touchStartRef.current.x);
+        const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
+
+        if (deltaX > 8 && deltaX > deltaY) {
+          swipeGestureRef.current = true;
+        }
+      }}
+      onTouchEnd={() => {
+        touchStartRef.current = null;
+      }}
+      onClick={(event) => {
+        if (swipeGestureRef.current) {
+          swipeGestureRef.current = false;
+          event.preventDefault();
+          return;
+        }
         trackSeasonOpen(season.season);
       }}
       style={{
@@ -433,6 +461,7 @@ export default function SeasonCarousel({ seasons, enableTrendVoting = false }: S
         minWidth: `${cardWidth}px`,
         maxWidth: `${cardWidth}px`,
         height: `${cardHeight}px`,
+        touchAction: useTouchCarousel ? "pan-x" : "auto",
       }}
       className={`group relative flex shrink-0 flex-col overflow-hidden rounded-md border border-white/10 bg-zinc-900 transition duration-300 hover:-translate-y-1 hover:border-white/25 ${
         isMobileView ? "snap-start active:scale-[0.99]" : ""
@@ -446,10 +475,10 @@ export default function SeasonCarousel({ seasons, enableTrendVoting = false }: S
 
       <SeasonThumbnail seasonNumber={season.season} title={season.title} arc={season.arc} accent={season.accent} />
 
-      <div className="flex flex-1 flex-col justify-between p-4">
+      <div className={`flex flex-1 flex-col justify-between ${isMobileView ? "p-3" : "p-4"}`}>
         <div>
-          <h3 className="line-clamp-2 text-base font-bold leading-snug">{season.title}</h3>
-          <p className="mt-2 line-clamp-3 text-sm text-white/70">{season.synopsis}</p>
+          <h3 className={`line-clamp-2 font-bold leading-snug ${isMobileView ? "text-sm" : "text-base"}`}>{season.title}</h3>
+          <p className={`mt-2 line-clamp-3 text-white/70 ${isMobileView ? "text-xs" : "text-sm"}`}>{season.synopsis}</p>
         </div>
 
         <div className="mt-3 space-y-2">
@@ -460,7 +489,9 @@ export default function SeasonCarousel({ seasons, enableTrendVoting = false }: S
             />
           </div>
 
-          <p className="text-[11px] text-white/60">{watchedProgressBySeason[season.season] ?? 0}% visto</p>
+          <p className={`${isMobileView ? "text-[10px]" : "text-[11px]"} text-white/60`}>
+            {watchedProgressBySeason[season.season] ?? 0}% visto
+          </p>
         </div>
 
         {enableTrendVoting ? (
@@ -484,7 +515,7 @@ export default function SeasonCarousel({ seasons, enableTrendVoting = false }: S
           </div>
         ) : null}
 
-        <p className="mt-3 text-xs text-white/60">
+        <p className={`mt-3 text-white/60 ${isMobileView ? "text-[11px]" : "text-xs"}`}>
           <span className="inline-flex items-center gap-1">
             <span>{season.years}</span>
             <GoDotFill className="text-[10px]" aria-hidden="true" />
@@ -496,8 +527,6 @@ export default function SeasonCarousel({ seasons, enableTrendVoting = false }: S
       <div className="pointer-events-none absolute inset-0 rounded-md ring-1 ring-inset ring-white/0 transition group-hover:ring-white/20" />
     </Link>
   );
-
-  const useTouchCarousel = isMobileView || isTouchInput;
 
   if (!isCarouselEnabled || useTouchCarousel) {
     return (

@@ -60,12 +60,12 @@ export default function Home() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,#2563eb55,transparent_40%)]" />
           <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent" />
 
-          <div className="mx-auto grid max-w-[1500px] px-4 py-10 sm:px-8 sm:py-20 lg:grid-cols-[1.3fr_1fr]">
+          <div className="mx-auto grid max-w-[1500px] px-3 py-7 sm:px-8 sm:py-20 lg:grid-cols-[1.3fr_1fr]">
             <div className="relative z-10 max-w-2xl space-y-5">
               <p className="text-xs font-bold tracking-[0.25em] text-white/70">STAGIONE IN EVIDENZA</p>
-              <h1 className="text-3xl font-black leading-tight sm:text-6xl">{featuredSeason.title}</h1>
-              <p className="text-sm text-white/85 sm:text-lg">{featuredSeason.synopsis}</p>
-              <p className="flex flex-wrap items-center gap-1 text-sm text-white/60">
+              <h1 className="text-2xl font-black leading-tight sm:text-6xl">{featuredSeason.title}</h1>
+              <p className="text-xs text-white/85 sm:text-lg">{featuredSeason.synopsis}</p>
+              <p className="flex flex-wrap items-center gap-1 text-xs text-white/60 sm:text-sm">
                 <span>Stagione {featuredSeason.season}</span>
                 <GoDotFill className="text-[10px]" aria-hidden="true" />
                 <span>{featuredSeason.years}</span>
@@ -87,10 +87,10 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="mx-auto flex max-w-[1500px] flex-col gap-8 px-4 py-8 sm:gap-10 sm:px-8 sm:py-10">
+        <section className="mx-auto flex max-w-[1500px] flex-col gap-7 px-3 py-7 sm:gap-10 sm:px-8 sm:py-10">
           {seasonRows.map((row) => (
             <div key={row.rowTitle} className="space-y-3 sm:space-y-4">
-              <h2 className="text-3xl font-extrabold tracking-tight sm:text-2xl sm:font-bold">{row.rowTitle}</h2>
+              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl sm:font-bold">{row.rowTitle}</h2>
 
               <SeasonCarousel seasons={row.seasons} enableTrendVoting={row.rowTitle === "Trending"} />
             </div>
