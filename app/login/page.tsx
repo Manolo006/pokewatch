@@ -98,6 +98,14 @@ export default function LoginPage() {
               required
               className="w-full rounded border border-white/20 bg-black/30 px-3 py-2 text-sm outline-none ring-0 focus:border-white/40"
             />
+            <button
+              type="button"
+              onClick={() => router.push("/lost")}
+              disabled={loading}
+              className="mt-2 text-xs font-medium text-white/75 underline underline-offset-2 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Scordato la password?
+            </button>
           </div>
 
           {errorMessage ? <p className="text-sm text-red-400">{errorMessage}</p> : null}

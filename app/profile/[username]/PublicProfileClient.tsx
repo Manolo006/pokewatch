@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { get, ref } from "firebase/database";
 import ProfilePage from "../page";
 import { useAuth } from "@/app/components/AuthProvider";
-import { db } from "@/app/lib/firebase";
+import { db } from "@/appncib/firebase";
 
 type PublicProfileClientProps = {
   params: Promise<{ username: string }>;
@@ -16,8 +16,6 @@ type PublicProfileRecord = {
   username?: string;
   displayName?: string;
   joinedAt?: string | null;
-  joinDayVisible?: boolean;
-  profileVisibility?: "public" | "private";
 };
 
 function getUserSlug(email?: string | null) {
@@ -97,8 +95,6 @@ export default function PublicProfileClient({ params }: PublicProfileClientProps
       publicDisplayName={publicProfile?.displayName}
       publicUsername={publicProfile?.username ?? normalizedUsername}
       publicJoinedAt={publicProfile?.joinedAt}
-      publicJoinDayVisible={publicProfile?.joinDayVisible}
-      publicProfileVisibility={publicProfile?.profileVisibility}
       readOnly
     />
   );

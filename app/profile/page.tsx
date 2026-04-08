@@ -12,27 +12,24 @@ import {
   signOut,
   sendPasswordResetEmail,
   unlink,
-  updateEmail,
   updatePassword,
   updateProfile,
+  verifyBeforeUpdateEmail,
 } from "firebase/auth";
 import { get, ref, remove, set, update } from "firebase/database";
 import { FaChevronLeft, FaChevronRight, FaEye, FaEyeSlash, FaPen, FaTrash } from "react-icons/fa";
+import { FcGoogle } from "react-icons/fc";
 import { useAuth } from "@/app/components/AuthProvider";
 import AuthHeaderActions from "@/app/components/AuthHeaderActions";
 import { auth, db, googleProvider } from "@/app/lib/firebase";
 import { allSeasons, episodesLabel, getEpisodesForSeason } from "@/app/data/pokemonCatalog";
 
 type EpisodeFillerType = "non-filler" | "filler" | "misto";
-type ProfileVisibility = "public" | "private";
 
 type OwnProfileSettings = {
   username: string;
   displayName: string;
   joinedAt: string | null;
-  joinDayVisible: boolean;
-  profileVisibility: ProfileVisibility;
-  twoFactorEnabled: boolean;
 };
 
 const FILLER_STORAGE_PREFIX = "pokewatch-filler-season";
@@ -177,13 +174,6 @@ function maskEmail(value?: string | null) {
   return `${safeName}@${domainName.slice(0, 1)}***.${extension}`;
 }
 
-function maskPhone(value?: string | null) {
-  if (!value) return "Not set";
-  const digits = value.replace(/\D/g, "");
-  if (digits.length < 4) return "***";
-  return `*** *** *** **${digits.slice(-2)}`;
-}
-
 function formatJoinDay(value?: string | null) {
   if (!value) return "Non disponibile";
 
@@ -255,8 +245,6 @@ type ProfilePageProps = {
   publicDisplayName?: string;
   publicUsername?: string;
   publicJoinedAt?: string | null;
-  publicJoinDayVisible?: boolean;
-  publicProfileVisibility?: "public" | "private";
   manageMode?: boolean;
   settingsSection?: "profile" | "security";
   readOnly?: boolean;
@@ -267,8 +255,6 @@ export default function ProfilePage({
   publicDisplayName,
   publicUsername,
   publicJoinedAt,
-  publicJoinDayVisible,
-  publicProfileVisibility,
   manageMode = false,
   settingsSection = "profile",
   readOnly = false,
@@ -281,17 +267,14 @@ export default function ProfilePage({
   const [showSecurityPanel, setShowSecurityPanel] = useState(false);
   const [editNickname, setEditNickname] = useState("");
   const [editDisplayName, setEditDisplayName] = useState("");
-  const [joinDayVisibleSetting, setJoinDayVisibleSetting] = useState(true);
-  const [profileVisibilitySetting, setProfileVisibilitySetting] = useState<ProfileVisibility>("public");
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
+  const [emailCurrentPassword, setEmailCurrentPassword] = useState("");
+  const [passwordCurrentPassword, setPasswordCurrentPassword] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [showNewPasswordValue, setShowNewPasswordValue] = useState(false);
   const [bioDraft, setBioDraft] = useState("");
   const [showEmailValue, setShowEmailValue] = useState(false);
-  const [showPhoneValue, setShowPhoneValue] = useState(false);
   const [enableEmailAccountCreation, setEnableEmailAccountCreation] = useState(false);
-  const [enablePhoneAccountCreation, setEnablePhoneAccountCreation] = useState(false);
   const [showEmailEditor, setShowEmailEditor] = useState(false);
   const [showPasswordEditor, setShowPasswordEditor] = useState(false);
   const [deleteAccountNotice, setDeleteAccountNotice] = useState<string | null>(null);
@@ -300,6 +283,16 @@ export default function ProfilePage({
   const [securityMessage, setSecurityMessage] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [securityError, setSecurityError] = useState<string | null>(null);
+  const [emailSecurityMessage, setEmailSecurityMessage] = useState<string | null>(null);
+  const [emailSecurityError, setEmailSecurityError] = useState<string | null>(null);
+  const [passwordSecurityMessage, setPasswordSecurityMessage] = useState<string | null>(null);
+  const [passwordSecurityError, setPasswordSecurityError] = useState<string | null>(null);
+  const [isSecurityMessageFading, setIsSecurityMessageFading] = useState(false);
+  const [isSecurityErrorFading, setIsSecurityErrorFading] = useState(false);
+  const [isEmailSecurityMessageFading, setIsEmailSecurityMessageFading] = useState(false);
+  const [isEmailSecurityErrorFading, setIsEmailSecurityErrorFading] = useState(false);
+  const [isPasswordSecurityMessageFading, setIsPasswordSecurityMessageFading] = useState(false);
+  const [isPasswordSecurityErrorFading, setIsPasswordSecurityErrorFading] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingSecurity, setIsSavingSecurity] = useState(false);
   const isGoogleLinked = Boolean(user?.providerData?.some((provider) => provider.providerId === "google.com"));
@@ -308,8 +301,6 @@ export default function ProfilePage({
   const displayName = publicDisplayName ?? ownDisplayName;
   const usernameLabel = publicUsername ?? ownUsername;
   const isPublicView = Boolean(viewedUserId && viewedUserId !== user?.uid);
-  const joinDayVisible = isPublicView ? (publicJoinDayVisible ?? true) : joinDayVisibleSetting;
-  const profileVisibility = isPublicView ? (publicProfileVisibility ?? "public") : profileVisibilitySetting;
   const joinDaySource = publicJoinedAt ?? ownProfileSettings?.joinedAt ?? user?.metadata.creationTime;
   const [selectedSeasonNumber, setSelectedSeasonNumber] = useState<number | null>(null);
   const [seasonCarouselStart, setSeasonCarouselStart] = useState(0);
@@ -345,24 +336,14 @@ export default function ProfilePage({
       const username = value?.username || getUserSlug(user.email);
       const display = value?.displayName || user.displayName?.trim() || getDisplayName(user.email);
       const joinedAt = value?.joinedAt ?? user.metadata.creationTime ?? null;
-      const visible = typeof value?.joinDayVisible === "boolean" ? value.joinDayVisible : true;
-      const visibility = value?.profileVisibility === "private" ? "private" : "public";
-      const twoFactor = Boolean(value?.twoFactorEnabled);
 
       setOwnProfileSettings({
         username,
         displayName: display,
         joinedAt,
-        joinDayVisible: visible,
-        profileVisibility: visibility,
-        twoFactorEnabled: twoFactor,
       });
       setEditNickname(username);
       setEditDisplayName(display);
-      setJoinDayVisibleSetting(visible);
-      setProfileVisibilitySetting(visibility);
-      setTwoFactorEnabled(twoFactor);
-      setNewEmail(user.email ?? "");
     };
 
     void loadOwnProfileSettings();
@@ -371,6 +352,126 @@ export default function ProfilePage({
       active = false;
     };
   }, [db, isPublicView, user]);
+
+  useEffect(() => {
+    if (!securityMessage) return;
+
+    setIsSecurityMessageFading(false);
+
+    const fadeTimeoutId = window.setTimeout(() => {
+      setIsSecurityMessageFading(true);
+    }, 3200);
+
+    const timeoutId = window.setTimeout(() => {
+      setSecurityMessage(null);
+      setIsSecurityMessageFading(false);
+    }, 4000);
+
+    return () => {
+      window.clearTimeout(fadeTimeoutId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [securityMessage]);
+
+  useEffect(() => {
+    if (!securityError) return;
+
+    setIsSecurityErrorFading(false);
+
+    const fadeTimeoutId = window.setTimeout(() => {
+      setIsSecurityErrorFading(true);
+    }, 3200);
+
+    const timeoutId = window.setTimeout(() => {
+      setSecurityError(null);
+      setIsSecurityErrorFading(false);
+    }, 4000);
+
+    return () => {
+      window.clearTimeout(fadeTimeoutId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [securityError]);
+
+  useEffect(() => {
+    if (!emailSecurityMessage) return;
+
+    setIsEmailSecurityMessageFading(false);
+
+    const fadeTimeoutId = window.setTimeout(() => {
+      setIsEmailSecurityMessageFading(true);
+    }, 3200);
+
+    const timeoutId = window.setTimeout(() => {
+      setEmailSecurityMessage(null);
+      setIsEmailSecurityMessageFading(false);
+    }, 4000);
+
+    return () => {
+      window.clearTimeout(fadeTimeoutId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [emailSecurityMessage]);
+
+  useEffect(() => {
+    if (!emailSecurityError) return;
+
+    setIsEmailSecurityErrorFading(false);
+
+    const fadeTimeoutId = window.setTimeout(() => {
+      setIsEmailSecurityErrorFading(true);
+    }, 3200);
+
+    const timeoutId = window.setTimeout(() => {
+      setEmailSecurityError(null);
+      setIsEmailSecurityErrorFading(false);
+    }, 4000);
+
+    return () => {
+      window.clearTimeout(fadeTimeoutId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [emailSecurityError]);
+
+  useEffect(() => {
+    if (!passwordSecurityMessage) return;
+
+    setIsPasswordSecurityMessageFading(false);
+
+    const fadeTimeoutId = window.setTimeout(() => {
+      setIsPasswordSecurityMessageFading(true);
+    }, 3200);
+
+    const timeoutId = window.setTimeout(() => {
+      setPasswordSecurityMessage(null);
+      setIsPasswordSecurityMessageFading(false);
+    }, 4000);
+
+    return () => {
+      window.clearTimeout(fadeTimeoutId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [passwordSecurityMessage]);
+
+  useEffect(() => {
+    if (!passwordSecurityError) return;
+
+    setIsPasswordSecurityErrorFading(false);
+
+    const fadeTimeoutId = window.setTimeout(() => {
+      setIsPasswordSecurityErrorFading(true);
+    }, 3200);
+
+    const timeoutId = window.setTimeout(() => {
+      setPasswordSecurityError(null);
+      setIsPasswordSecurityErrorFading(false);
+    }, 4000);
+
+    return () => {
+      window.clearTimeout(fadeTimeoutId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [passwordSecurityError]);
 
   const saveProfileBasics = async () => {
     if (!user || !db) return;
@@ -414,9 +515,6 @@ export default function ProfilePage({
         username: normalizedNickname,
         displayName: trimmedDisplayName,
         joinedAt,
-        joinDayVisible: joinDayVisibleSetting,
-        profileVisibility: profileVisibilitySetting,
-        twoFactorEnabled,
       };
 
       await set(ref(db, `users/${user.uid}/publicProfile`), nextSettings);
@@ -425,8 +523,6 @@ export default function ProfilePage({
         username: normalizedNickname,
         displayName: trimmedDisplayName,
         joinedAt,
-        joinDayVisible: joinDayVisibleSetting,
-        profileVisibility: profileVisibilitySetting,
       });
 
       if (normalizedNickname !== currentUsername) {
@@ -451,30 +547,19 @@ export default function ProfilePage({
 
     setSecurityError(null);
     setSecurityMessage(null);
+
     setIsSavingSecurity(true);
 
     try {
-      await update(ref(db, `users/${user.uid}/publicProfile`), {
-        joinDayVisible: joinDayVisibleSetting,
-        profileVisibility: profileVisibilitySetting,
-        twoFactorEnabled,
-      });
-
-      await update(ref(db, `publicProfiles/${username}`), {
-        joinDayVisible: joinDayVisibleSetting,
-        profileVisibility: profileVisibilitySetting,
-      });
+      await update(ref(db, `users/${user.uid}/publicProfile`), {});
 
       setOwnProfileSettings((prev) => ({
         ...prev,
         username,
         displayName: display,
         joinedAt,
-        joinDayVisible: joinDayVisibleSetting,
-        profileVisibility: profileVisibilitySetting,
-        twoFactorEnabled,
       }));
-      setSecurityMessage("Impostazioni sicurezza/privacy aggiornate.");
+      setSecurityMessage("Impostazioni di sicurezza aggiornate.");
     } catch {
       setSecurityError("Impossibile salvare le impostazioni di sicurezza.");
     } finally {
@@ -483,41 +568,69 @@ export default function ProfilePage({
   };
 
   const handleChangeEmail = async () => {
-    if (!user || !auth || !newEmail.trim() || !currentPassword) return;
+    if (!user || !auth) return;
 
-    setSecurityError(null);
-    setSecurityMessage(null);
+    if (!newEmail.trim()) {
+      setEmailSecurityMessage(null);
+      setEmailSecurityError("Inserisci una nuova email.");
+      return;
+    }
+
+    if (!emailCurrentPassword.trim()) {
+      setEmailSecurityMessage(null);
+      setEmailSecurityError("Inserisci la password corrente per cambiare email.");
+      return;
+    }
+
+    setEmailSecurityError(null);
+    setEmailSecurityMessage(null);
     setIsSavingSecurity(true);
 
     try {
-      const credential = EmailAuthProvider.credential(user.email ?? "", currentPassword);
+      const credential = EmailAuthProvider.credential(user.email ?? "", emailCurrentPassword);
       await reauthenticateWithCredential(user, credential);
-      await updateEmail(user, newEmail.trim());
-      setSecurityMessage("Email aggiornata con successo.");
-      setCurrentPassword("");
+      await verifyBeforeUpdateEmail(user, newEmail.trim());
+      setEmailSecurityMessage("Ti ho inviato un link di verifica alla nuova email. Conferma il link per completare la modifica.");
+      setEmailCurrentPassword("");
+      setNewEmail("");
     } catch {
-      setSecurityError("Cambio email fallito. Controlla password corrente e nuova email.");
+      setEmailSecurityError("Impossibile inviare la verifica email. Controlla password corrente e nuova email.");
     } finally {
       setIsSavingSecurity(false);
     }
   };
 
   const handleChangePassword = async () => {
-    if (!user || !newPassword.trim() || !currentPassword) return;
+    if (!user || !user.email) return;
 
-    setSecurityError(null);
-    setSecurityMessage(null);
+    if (!passwordCurrentPassword.trim()) {
+      setPasswordSecurityError("Inserisci la password corrente per cambiare la password.");
+      return;
+    }
+
+    if (!newPassword.trim()) {
+      setPasswordSecurityError("Inserisci una nuova password.");
+      return;
+    }
+
+    if (newPassword.trim().length < 6) {
+      setPasswordSecurityError("La nuova password deve avere almeno 6 caratteri.");
+      return;
+    }
+
+    setPasswordSecurityError(null);
+    setPasswordSecurityMessage(null);
     setIsSavingSecurity(true);
 
     try {
-      const credential = EmailAuthProvider.credential(user.email ?? "", currentPassword);
+      const credential = EmailAuthProvider.credential(user.email, passwordCurrentPassword);
       await reauthenticateWithCredential(user, credential);
       await updatePassword(user, newPassword.trim());
-      setSecurityMessage("Password aggiornata con successo.");
-      setCurrentPassword("");
+      setPasswordSecurityMessage("Password aggiornata con successo.");
+      setPasswordCurrentPassword("");
       setNewPassword("");
     } catch {
-      setSecurityError("Cambio password fallito. Verifica la password corrente.");
+      setPasswordSecurityError("Impossibile cambiare password. Controlla password corrente e riprova.");
     } finally {
       setIsSavingSecurity(false);
     }
@@ -590,6 +703,14 @@ export default function ProfilePage({
     } finally {
       setIsSavingSecurity(false);
     }
+  };
+
+  const handleToggleEmailEditor = () => {
+    setShowEmailEditor((prev) => !prev);
+  };
+
+  const handleTogglePasswordEditor = () => {
+    setShowPasswordEditor((prev) => !prev);
   };
 
   const handleDeleteAccount = async () => {
@@ -807,24 +928,24 @@ export default function ProfilePage({
           </div>
         </header>
 
-        <main className="relative z-10 mx-auto grid w-full max-w-300 gap-6 px-4 py-7 sm:px-8 sm:py-10 lg:grid-cols-[240px_1fr]">
-          <aside className="rounded-md border border-white/10 bg-[#181818] p-4">
+        <main className="relative z-10 mx-auto w-full max-w-300 space-y-5 px-4 py-7 sm:px-8 sm:py-10">
+          <div className="rounded-md border border-white/10 bg-[#181818] p-3 sm:p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/50">Settings menu</p>
-            <nav className="mt-3 space-y-2">
+            <nav className="mt-3 flex flex-wrap gap-2">
               <Link
                 href="/profile/settings/profile"
-                className={`block rounded border px-3 py-2 text-sm transition ${settingsSection === "profile" ? "border-white/10 bg-white/5 font-semibold text-white" : "border-white/10 text-white/80 hover:bg-white/10"}`}
+                className={`rounded border px-3 py-2 text-sm transition ${settingsSection === "profile" ? "border-white/10 bg-white/5 font-semibold text-white" : "border-white/10 text-white/80 hover:bg-white/10"}`}
               >
                 Profilo
               </Link>
               <Link
                 href="/profile/settings/security"
-                className={`block rounded border px-3 py-2 text-sm transition ${settingsSection === "security" ? "border-white/10 bg-white/5 font-semibold text-white" : "border-white/10 text-white/80 hover:bg-white/10"}`}
+                className={`rounded border px-3 py-2 text-sm transition ${settingsSection === "security" ? "border-white/10 bg-white/5 font-semibold text-white" : "border-white/10 text-white/80 hover:bg-white/10"}`}
               >
                 Sicurezza & Privacy
               </Link>
             </nav>
-          </aside>
+          </div>
 
           <section className="space-y-5">
             {settingsSection === "profile" ? (
@@ -895,100 +1016,206 @@ export default function ProfilePage({
             {settingsSection === "security" ? (
             <article id="security" className="rounded-md border border-white/10 bg-[#181818] p-5 sm:p-6">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/55">Settings</p>
-              <h1 className="mt-2 text-2xl font-black sm:text-3xl">Security and Privacy</h1>
-              <p className="mt-2 text-sm text-white/70">Layout a sezioni in stile Twitch: account, connessioni e privacy.</p>
+              <h1 className="mt-2 text-2xl font-black sm:text-3xl">Security</h1>
+              <p className="mt-2 text-sm text-white/70">Impostazioni in stile Twitch classico: lista lineare con voce, descrizione e controllo a destra.</p>
 
-              <section className="mt-6 rounded border border-white/10 bg-black/25 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-white">Account security</p>
-                    <p className="mt-1 text-xs text-white/65">Aggiorna email e password del tuo account.</p>
+              <section className="mt-6 overflow-hidden rounded border border-white/10 bg-black/25">
+                <div className="border-b border-white/10 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/60">Accesso e account</p>
+                </div>
+
+                <div className="divide-y divide-white/10">
+                  <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-white">Email</p>
+                      <p className="mt-1 text-xs text-white/65">Indirizzo attuale: {maskEmail(user?.email)}. Puoi aggiornarlo con conferma password.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleToggleEmailEditor}
+                      className="rounded border border-white/20 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
+                    >
+                      {showEmailEditor ? "Chiudi" : "Modifica"}
+                    </button>
                   </div>
-                  <span className="rounded border border-white/15 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-white/60">Login</span>
-                </div>
 
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <label className="text-xs text-white/70">
-                    Nuova email
-                    <input
-                      type="email"
-                      value={newEmail}
-                      onChange={(event) => setNewEmail(event.target.value)}
-                      className="mt-1 w-full rounded border border-white/20 bg-black/35 px-3 py-2 text-sm text-white outline-none ring-[#e50914] focus:ring-1"
-                    />
-                  </label>
-                  <label className="text-xs text-white/70">
-                    Password corrente
-                    <input
-                      type="password"
-                      value={currentPassword}
-                      onChange={(event) => setCurrentPassword(event.target.value)}
-                      className="mt-1 w-full rounded border border-white/20 bg-black/35 px-3 py-2 text-sm text-white outline-none ring-[#e50914] focus:ring-1"
-                    />
-                  </label>
-                </div>
+                  {showEmailEditor ? (
+                    <div className="bg-black/20 px-4 py-3">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <input
+                          type="email"
+                          value={newEmail}
+                          onChange={(event) => setNewEmail(event.target.value)}
+                          placeholder="Nuova email"
+                          className="w-full rounded border border-white/20 bg-black/35 px-3 py-2 text-sm text-white outline-none ring-[#e50914] focus:ring-1"
+                        />
+                        <input
+                          type="password"
+                          value={emailCurrentPassword}
+                          onChange={(event) => setEmailCurrentPassword(event.target.value)}
+                          placeholder="Password corrente"
+                          className="w-full rounded border border-white/20 bg-black/35 px-3 py-2 text-sm text-white outline-none ring-[#e50914] focus:ring-1"
+                        />
+                      </div>
+                      <div className="mt-3 flex justify-end">
+                        <div className="w-full rounded border border-white/10 bg-black/20 p-2.5 text-[11px] text-white/70">
+                          Per confermare la modifica, invieremo un link di verifica alla nuova email.
+                        </div>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <div className="min-h-[1.1rem] text-left">
+                          {emailSecurityError ? (
+                            <p
+                              className={`text-xs text-rose-300 transition-opacity duration-700 ${
+                                isEmailSecurityErrorFading ? "opacity-0" : "opacity-100"
+                              }`}
+                            >
+                              {emailSecurityError}
+                            </p>
+                          ) : null}
+                          {!emailSecurityError && emailSecurityMessage ? (
+                            <p
+                              className={`text-xs text-emerald-300 transition-opacity duration-700 ${
+                                isEmailSecurityMessageFading ? "opacity-0" : "opacity-100"
+                              }`}
+                            >
+                              {emailSecurityMessage}
+                            </p>
+                          ) : null}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void handleChangeEmail()}
+                          className="rounded border border-white/20 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
+                        >
+                          Invia verifica email
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
 
-                <label className="mt-3 block text-xs text-white/70">
-                  Nuova password
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(event) => setNewPassword(event.target.value)}
-                    className="mt-1 w-full rounded border border-white/20 bg-black/35 px-3 py-2 text-sm text-white outline-none ring-[#e50914] focus:ring-1"
-                  />
-                </label>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button type="button" onClick={() => void handleChangeEmail()} className="rounded border border-white/20 px-3 py-2 text-xs hover:bg-white/10">Aggiorna email</button>
-                  <button type="button" onClick={() => void handleChangePassword()} className="rounded border border-white/20 px-3 py-2 text-xs hover:bg-white/10">Aggiorna password</button>
-                  <button type="button" onClick={() => void handleResetPassword()} className="rounded border border-white/20 px-3 py-2 text-xs hover:bg-white/10">Invia reset password</button>
-                </div>
-              </section>
-
-              <section className="mt-4 rounded border border-white/10 bg-black/25 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-white">Connected accounts</p>
-                    <p className="mt-1 text-xs text-white/65">Collega o scollega il login Google.</p>
+                  <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-white">Password</p>
+                      <p className="mt-1 text-xs text-white/65">Cambia la password del tuo account per aumentare la sicurezza.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleTogglePasswordEditor}
+                      className="rounded border border-white/20 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
+                    >
+                      {showPasswordEditor ? "Chiudi" : "Modifica"}
+                    </button>
                   </div>
-                  <span className="rounded border border-white/15 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-white/60">OAuth</span>
-                </div>
 
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {!isGoogleLinked ? (
-                    <button type="button" onClick={() => void handleConnectGoogle()} className="rounded border border-white/20 px-3 py-2 text-xs hover:bg-white/10">Collega Google</button>
-                  ) : (
-                    <button type="button" onClick={() => void handleDisconnectGoogle()} className="rounded border border-rose-400/35 bg-rose-500/10 px-3 py-2 text-xs text-rose-200 hover:bg-rose-500/20">Scollega Google</button>
-                  )}
-                </div>
-              </section>
+                  {showPasswordEditor ? (
+                    <div className="bg-black/20 px-4 py-3">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <input
+                          type="password"
+                          value={passwordCurrentPassword}
+                          onChange={(event) => setPasswordCurrentPassword(event.target.value)}
+                          placeholder="Password corrente"
+                          className="w-full rounded border border-white/20 bg-black/35 px-3 py-2 text-sm text-white outline-none ring-[#e50914] focus:ring-1"
+                        />
+                        <div className="relative">
+                          <input
+                            type={showNewPasswordValue ? "text" : "password"}
+                            value={newPassword}
+                            onChange={(event) => setNewPassword(event.target.value)}
+                            placeholder="Nuova password"
+                            className="w-full rounded border border-white/20 bg-black/35 px-3 py-2 pr-10 text-sm text-white outline-none ring-[#e50914] focus:ring-1"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPasswordValue((prev) => !prev)}
+                            aria-label={showNewPasswordValue ? "Nascondi password" : "Mostra password"}
+                            className="absolute inset-y-0 right-0 flex items-center px-3 text-white/65 transition hover:text-white"
+                          >
+                            {showNewPasswordValue ? <FaEyeSlash size={14} /> : <FaEye size={14} />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="mt-2">
+                        <button
+                          type="button"
+                          onClick={() => router.push("/lost")}
+                          className="text-xs font-medium text-white/75 underline underline-offset-2 transition hover:text-white"
+                        >
+                          Scordato la password?
+                        </button>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <div className="min-h-[1.1rem] text-left">
+                          {passwordSecurityError ? (
+                            <p
+                              className={`text-xs text-rose-300 transition-opacity duration-700 ${
+                                isPasswordSecurityErrorFading ? "opacity-0" : "opacity-100"
+                              }`}
+                            >
+                              {passwordSecurityError}
+                            </p>
+                          ) : null}
+                          {!passwordSecurityError && passwordSecurityMessage ? (
+                            <p
+                              className={`text-xs text-emerald-300 transition-opacity duration-700 ${
+                                isPasswordSecurityMessageFading ? "opacity-0" : "opacity-100"
+                              }`}
+                            >
+                              {passwordSecurityMessage}
+                            </p>
+                          ) : null}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void handleChangePassword()}
+                          className="rounded border border-white/20 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
+                        >
+                          Cambia password
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
 
-              <section className="mt-4 rounded border border-white/10 bg-black/25 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-white">Privacy controls</p>
-                    <p className="mt-1 text-xs text-white/65">Gestisci la visibilità del profilo e dei dettagli pubblici.</p>
+                  <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-white">Google</p>
+                      <p className="mt-1 text-xs text-white/65">Sincronizza o scollega il provider Google per l'accesso rapido.</p>
+                    </div>
+                    {!isGoogleLinked ? (
+                      <button
+                        type="button"
+                        onClick={() => void handleConnectGoogle()}
+                        className="inline-flex items-center gap-2 rounded border border-white/25 bg-white/8 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/16"
+                      >
+                        <FcGoogle size={16} />
+                        Sincronizza Google
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => void handleDisconnectGoogle()}
+                        className="inline-flex items-center gap-2 rounded border border-rose-400/35 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-200 transition hover:bg-rose-500/20"
+                      >
+                        <FcGoogle size={16} />
+                        Scollega Google
+                      </button>
+                    )}
                   </div>
-                  <span className="rounded border border-white/15 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-white/60">Privacy</span>
-                </div>
 
-                <div className="mt-3 space-y-3">
-                  <label className="flex items-center justify-between gap-3 rounded border border-white/15 bg-black/25 px-3 py-2 text-xs text-white/85">
-                    <span>Mostra join day</span>
-                    <input type="checkbox" checked={joinDayVisibleSetting} onChange={(event) => setJoinDayVisibleSetting(event.target.checked)} />
-                  </label>
-                  <label className="flex items-center justify-between gap-3 rounded border border-white/15 bg-black/25 px-3 py-2 text-xs text-white/85">
-                    <span>Profilo privato</span>
-                    <input
-                      type="checkbox"
-                      checked={profileVisibilitySetting === "private"}
-                      onChange={(event) => setProfileVisibilitySetting(event.target.checked ? "private" : "public")}
-                    />
-                  </label>
-                  <label className="flex items-center justify-between gap-3 rounded border border-white/15 bg-black/25 px-3 py-2 text-xs text-white/85">
-                    <span>Abilita 2FA</span>
-                    <input type="checkbox" checked={twoFactorEnabled} onChange={(event) => setTwoFactorEnabled(event.target.checked)} />
-                  </label>
+                  <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-white">Termina sessioni</p>
+                      <p className="mt-1 text-xs text-white/65">Disconnetti tutte le sessioni e richiedi un nuovo login.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void handleSignOutEverywhere()}
+                      className="rounded border border-white/20 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
+                    >
+                      Termina sessioni
+                    </button>
+                  </div>
                 </div>
               </section>
 
@@ -998,11 +1225,8 @@ export default function ProfilePage({
                 disabled={isSavingSecurity}
                 className="mt-4 rounded bg-[#e50914] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#f6121d] disabled:opacity-60"
               >
-                {isSavingSecurity ? "Salvataggio..." : "Salva impostazioni sicurezza/privacy"}
+                {isSavingSecurity ? "Salvataggio..." : "Salva impostazioni sicurezza"}
               </button>
-
-              {securityError ? <p className="mt-3 text-xs text-rose-300">{securityError}</p> : null}
-              {securityMessage ? <p className="mt-3 text-xs text-emerald-300">{securityMessage}</p> : null}
             </article>
             ) : null}
 
@@ -1113,7 +1337,7 @@ export default function ProfilePage({
 
                   <div className="mt-1 flex w-full items-center justify-between gap-3 border-t border-white/10 pt-4 text-left">
                     <p className="text-xs font-medium text-white/70">
-                      {joinDayVisible ? `Join day: ${formatJoinDay(joinDaySource)}` : "Join day nascosto"}
+                      Join day: {formatJoinDay(joinDaySource)}
                     </p>
                     {readOnly ? null : (
                       <div className="flex flex-wrap items-center justify-end gap-2">
@@ -1177,8 +1401,8 @@ export default function ProfilePage({
                     Password corrente
                     <input
                       type="password"
-                      value={currentPassword}
-                      onChange={(event) => setCurrentPassword(event.target.value)}
+                      value={emailCurrentPassword}
+                      onChange={(event) => setEmailCurrentPassword(event.target.value)}
                       className="mt-1 w-full rounded border border-white/20 bg-black/35 px-3 py-2 text-sm text-white outline-none ring-[#e50914] focus:ring-1"
                     />
                   </label>
@@ -1186,13 +1410,33 @@ export default function ProfilePage({
 
                 <label className="mt-3 block text-xs text-white/70">
                   Nuova password
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(event) => setNewPassword(event.target.value)}
-                    className="mt-1 w-full rounded border border-white/20 bg-black/35 px-3 py-2 text-sm text-white outline-none ring-[#e50914] focus:ring-1"
-                  />
+                  <div className="relative mt-1">
+                    <input
+                      type={showNewPasswordValue ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(event) => setNewPassword(event.target.value)}
+                      className="w-full rounded border border-white/20 bg-black/35 px-3 py-2 pr-10 text-sm text-white outline-none ring-[#e50914] focus:ring-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPasswordValue((prev) => !prev)}
+                      aria-label={showNewPasswordValue ? "Nascondi password" : "Mostra password"}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-white/65 transition hover:text-white"
+                    >
+                      {showNewPasswordValue ? <FaEyeSlash size={14} /> : <FaEye size={14} />}
+                    </button>
+                  </div>
                 </label>
+
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={() => router.push("/lost")}
+                    className="text-xs font-medium text-white/75 underline underline-offset-2 transition hover:text-white"
+                  >
+                    Scordato la password?
+                  </button>
+                </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button type="button" onClick={() => void handleChangeEmail()} className="rounded border border-white/20 px-3 py-2 text-xs hover:bg-white/10">Cambia email</button>
@@ -1205,23 +1449,24 @@ export default function ProfilePage({
                   )}
                 </div>
 
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                  <label className="flex items-center gap-2 text-xs text-white/80">
-                    <input type="checkbox" checked={joinDayVisibleSetting} onChange={(event) => setJoinDayVisibleSetting(event.target.checked)} />
-                    Mostra join day
-                  </label>
-                  <label className="flex items-center gap-2 text-xs text-white/80">
-                    <input type="checkbox" checked={profileVisibilitySetting === "private"} onChange={(event) => setProfileVisibilitySetting(event.target.checked ? "private" : "public")} />
-                    Profilo privato
-                  </label>
-                  <label className="flex items-center gap-2 text-xs text-white/80">
-                    <input type="checkbox" checked={twoFactorEnabled} onChange={(event) => setTwoFactorEnabled(event.target.checked)} />
-                    Abilita 2FA
-                  </label>
-                </div>
-
-                {securityError ? <p className="mt-3 text-xs text-rose-300">{securityError}</p> : null}
-                {securityMessage ? <p className="mt-3 text-xs text-emerald-300">{securityMessage}</p> : null}
+                {securityError ? (
+                  <p
+                    className={`mt-3 text-xs text-rose-300 transition-opacity duration-700 ${
+                      isSecurityErrorFading ? "opacity-0" : "opacity-100"
+                    }`}
+                  >
+                    {securityError}
+                  </p>
+                ) : null}
+                {securityMessage ? (
+                  <p
+                    className={`mt-3 text-xs text-emerald-300 transition-opacity duration-700 ${
+                      isSecurityMessageFading ? "opacity-0" : "opacity-100"
+                    }`}
+                  >
+                    {securityMessage}
+                  </p>
+                ) : null}
 
                 <button
                   type="button"
@@ -1258,17 +1503,13 @@ export default function ProfilePage({
                   </article>
                   <article className="rounded border border-white/15 bg-black/25 p-4">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">Sicurezza</p>
-                    <p className="mt-2 text-sm text-white/90">Gestisci email, password, reset credenziali, collegamento Google e opzioni 2FA.</p>
+                    <p className="mt-2 text-sm text-white/90">Gestisci email, password, reset credenziali e collegamento Google.</p>
                   </article>
                   <article className="rounded border border-white/15 bg-black/25 p-4">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">Privacy</p>
                     <p className="mt-2 text-sm text-white/90">Controlla visibilità profilo e join day per decidere cosa mostrare pubblicamente.</p>
                   </article>
                 </div>
-              </section>
-            ) : isPublicView && profileVisibility === "private" ? (
-              <section className="rounded-md border border-white/10 bg-[#181818] p-6 text-sm text-white/80">
-                Questo profilo è privato.
               </section>
             ) : (
             <div className="grid gap-5 lg:grid-cols-[1.15fr_1fr]">
