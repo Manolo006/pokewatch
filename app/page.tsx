@@ -1,9 +1,9 @@
-import SeasonCarousel from "./components/SeasonCarousel";
 import AuthHeaderActions from "./components/AuthHeaderActions";
 import ContinueWatchingButton from "./components/ContinueWatchingButton";
+import SeasonRowsSection from "./components/SeasonRowsSection";
 import { GoDotFill } from "react-icons/go";
 import { IoAdd, IoPlay } from "react-icons/io5";
-import { episodesLabel, latestSeason, seasonRows, type PokemonSeason } from "./data/pokemonCatalog";
+import { episodesLabel, latestSeason, type PokemonSeason } from "./data/pokemonCatalog";
 
 const featuredSeason: PokemonSeason =
   latestSeason ?? {
@@ -87,15 +87,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="mx-auto flex max-w-[1500px] flex-col gap-7 px-3 py-7 sm:gap-10 sm:px-8 sm:py-10">
-          {seasonRows.map((row) => (
-            <div key={row.rowTitle} className="space-y-3 sm:space-y-4">
-              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl sm:font-bold">{row.rowTitle}</h2>
-
-              <SeasonCarousel seasons={row.seasons} enableTrendVoting={row.rowTitle === "Trending"} />
-            </div>
-          ))}
-        </section>
+        <SeasonRowsSection />
       </main>
     </div>
   );

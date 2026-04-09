@@ -11,6 +11,7 @@ import {
 import { getSeasonPlaylistUrl } from "@/app/data/seasonPlaylists";
 import SeasonHeroThumbnail from "@/app/components/SeasonHeroThumbnail";
 import SeasonEpisodesList from "@/app/components/SeasonEpisodesList";
+import SeasonOpenCountTracker from "@/app/components/SeasonOpenCountTracker";
 import { getYouTubePlaylistVideos } from "@/app/lib/youtubePlaylist";
 
 type SeasonPageProps = {
@@ -70,6 +71,8 @@ export default async function SeasonPage({ params }: SeasonPageProps) {
 
   return (
     <div className="min-h-screen bg-[#141414] text-white">
+      <SeasonOpenCountTracker seasonNumber={selectedSeason.season} />
+
       <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-300 items-center justify-between px-4 py-4 sm:px-8">
           <Link

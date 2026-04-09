@@ -18,61 +18,7 @@ export type PokemonRow = {
 const baseRows = pokeRows as PokemonRow[];
 const baseSeasons = baseRows.flatMap((row) => row.seasons);
 
-const trendingSeasons: PokemonSeason[] = [
-  {
-    season: 101,
-    title: "Pokémon Legends: Rising Sparks",
-    arc: "Trend 1",
-    synopsis: "Placeholder: una nuova avventura ad alta energia tra regioni inedite e sfide globali.",
-    episodes: null,
-    years: "Prossimamente",
-    accent: "from-pink-600/90",
-  },
-  {
-    season: 102,
-    title: "Pokémon Nova Frontier",
-    arc: "Trend 2",
-    synopsis: "Placeholder: allenatori emergenti si sfidano in una frontiera ricca di misteri.",
-    episodes: null,
-    years: "Prossimamente",
-    accent: "from-indigo-600/90",
-  },
-  {
-    season: 103,
-    title: "Pokémon Eclipse Quest",
-    arc: "Trend 3",
-    synopsis: "Placeholder: un viaggio tra fenomeni rari e leggende antiche mai esplorate.",
-    episodes: null,
-    years: "Prossimamente",
-    accent: "from-purple-600/90",
-  },
-  {
-    season: 104,
-    title: "Pokémon Crystal Horizon",
-    arc: "Trend 4",
-    synopsis: "Placeholder: nuove alleanze e rivalità in un torneo interregionale spettacolare.",
-    episodes: null,
-    years: "Prossimamente",
-    accent: "from-cyan-500/90",
-  },
-  {
-    season: 105,
-    title: "Pokémon Mythic Pulse",
-    arc: "Trend 5",
-    synopsis: "Placeholder: antiche forze si risvegliano e cambiano gli equilibri del mondo Pokémon.",
-    episodes: null,
-    years: "Prossimamente",
-    accent: "from-amber-500/90",
-  },
-];
-
-export const seasonRows: PokemonRow[] = [
-  {
-    rowTitle: "Trending",
-    seasons: trendingSeasons,
-  },
-  ...baseRows,
-];
+export const seasonRows: PokemonRow[] = baseRows;
 
 export const allSeasons: PokemonSeason[] = seasonRows.flatMap((row) => row.seasons);
 
