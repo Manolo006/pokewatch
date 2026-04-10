@@ -10,16 +10,20 @@ type SeasonOpenCountTrackerProps = {
 };
 
 export default function SeasonOpenCountTracker({ seasonNumber }: SeasonOpenCountTrackerProps) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    if (!db || !Number.isInteger(seasonNumber) || seasonNumber <= 0) return;
+    if (!db || !Number.isInteger(seasonNumber) || seasonNumber <= 0 || loading) return;
 
-    const incrementCommunityOpenCount = () => {
-      void runTransaction(ref(db, `community/SeasonOpenCount/${seasonNumber}`), (current) => {
+    let isActive = true;
+
+    const incrementCommunityOpenCount = async () => {
+      const result = await runTransaction(ref(db, `community/SeasonOpenCount/${seasonNumber}`), (current) => {
         const count = Number(current);
         return Number.isFinite(count) && count >= 0 ? count + 1 : 1;
       });
+
+      return result.committed;
     };
 
     const trackOpenOnce = async () => {
@@ -35,8 +39,8 @@ export default function SeasonOpenCountTracker({ seasonNumber }: SeasonOpenCount
             return true;
           });
 
-          if (markerResult.committed) {
-            incrementCommunityOpenCount();
+          if (markerResult.committed && isActive) {
+            await incrementCommunityOpenCount();
           }
           return;
         } catch {
@@ -51,15 +55,21 @@ export default function SeasonOpenCountTracker({ seasonNumber }: SeasonOpenCount
           return;
         }
 
-        window.localStorage.setItem(anonKey, "1");
-        incrementCommunityOpenCount();
+        const incremented = await incrementCommunityOpenCount();
+        if (incremented && isActive) {
+          window.localStorage.setItem(anonKey, "1");
+        }
       } catch {
         // Se localStorage non è disponibile, non tracciamo per evitare spam involontario
       }
     };
 
     void trackOpenOnce();
-  }, [seasonNumber, user?.uid]);
+
+    return () => {
+      isActive = false;
+    };
+  }, [loading, seasonNumber, user?.uid]);
 
   return null;
 }
