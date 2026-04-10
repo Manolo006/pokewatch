@@ -13,12 +13,13 @@ export default function SeasonOpenCountTracker({ seasonNumber }: SeasonOpenCount
   const { user, loading } = useAuth();
 
   useEffect(() => {
-    if (!db || !Number.isInteger(seasonNumber) || seasonNumber <= 0 || loading) return;
+    const database = db;
+    if (!database || !Number.isInteger(seasonNumber) || seasonNumber <= 0 || loading) return;
 
     let isActive = true;
 
     const incrementCommunityOpenCount = async () => {
-      const result = await runTransaction(ref(db, `community/SeasonOpenCount/${seasonNumber}`), (current) => {
+      const result = await runTransaction(ref(database, `community/SeasonOpenCount/${seasonNumber}`), (current) => {
         const count = Number(current);
         return Number.isFinite(count) && count >= 0 ? count + 1 : 1;
       });
@@ -30,7 +31,7 @@ export default function SeasonOpenCountTracker({ seasonNumber }: SeasonOpenCount
       // Utente loggato: conteggio massimo una volta per stagione per uid (lato DB)
       if (user?.uid) {
         try {
-          const userSeasonMarkerRef = ref(db, `users/${user.uid}/seasonOpenTracked/${seasonNumber}`);
+          const userSeasonMarkerRef = ref(database, `users/${user.uid}/seasonOpenTracked/${seasonNumber}`);
           const markerResult = await runTransaction(userSeasonMarkerRef, (current) => {
             if (current === true) {
               return;
