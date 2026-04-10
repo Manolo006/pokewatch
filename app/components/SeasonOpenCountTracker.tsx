@@ -3,38 +3,63 @@
 import { useEffect } from "react";
 import { ref, runTransaction } from "firebase/database";
 import { db } from "@/app/lib/firebase";
+import { useAuth } from "@/app/components/AuthProvider";
 
 type SeasonOpenCountTrackerProps = {
   seasonNumber: number;
 };
 
-const DEDUPE_WINDOW_MS = 1500;
-
 export default function SeasonOpenCountTracker({ seasonNumber }: SeasonOpenCountTrackerProps) {
+  const { user } = useAuth();
+
   useEffect(() => {
     if (!db || !Number.isInteger(seasonNumber) || seasonNumber <= 0) return;
 
-    const storageKey = `pokewatch-season-open-count-${seasonNumber}`;
-    const now = Date.now();
+    const incrementCommunityOpenCount = () => {
+      void runTransaction(ref(db, `community/SeasonOpenCount/${seasonNumber}`), (current) => {
+        const count = Number(current);
+        return Number.isFinite(count) && count >= 0 ? count + 1 : 1;
+      });
+    };
 
-    try {
-      const lastTrackedAtRaw = window.sessionStorage.getItem(storageKey);
-      const lastTrackedAt = Number(lastTrackedAtRaw);
+    const trackOpenOnce = async () => {
+      // Utente loggato: conteggio massimo una volta per stagione per uid (lato DB)
+      if (user?.uid) {
+        try {
+          const userSeasonMarkerRef = ref(db, `users/${user.uid}/seasonOpenTracked/${seasonNumber}`);
+          const markerResult = await runTransaction(userSeasonMarkerRef, (current) => {
+            if (current === true) {
+              return;
+            }
 
-      if (Number.isFinite(lastTrackedAt) && now - lastTrackedAt < DEDUPE_WINDOW_MS) {
-        return;
+            return true;
+          });
+
+          if (markerResult.committed) {
+            incrementCommunityOpenCount();
+          }
+          return;
+        } catch {
+          return;
+        }
       }
 
-      window.sessionStorage.setItem(storageKey, String(now));
-    } catch {
-      // no-op
-    }
+      // Utente anonimo: fallback locale (una sola volta per browser/stagione)
+      try {
+        const anonKey = `pokewatch-anon-season-open-tracked-${seasonNumber}`;
+        if (window.localStorage.getItem(anonKey) === "1") {
+          return;
+        }
 
-    void runTransaction(ref(db, `community/SeasonOpenCount/${seasonNumber}`), (current) => {
-      const count = Number(current);
-      return Number.isFinite(count) && count >= 0 ? count + 1 : 1;
-    });
-  }, [seasonNumber]);
+        window.localStorage.setItem(anonKey, "1");
+        incrementCommunityOpenCount();
+      } catch {
+        // Se localStorage non è disponibile, non tracciamo per evitare spam involontario
+      }
+    };
+
+    void trackOpenOnce();
+  }, [seasonNumber, user?.uid]);
 
   return null;
 }
