@@ -28,8 +28,6 @@ export default function Home() {
             </span>
           </div>
 
-          <AuthHeaderActions />
-
           <nav className="mobile-top-nav order-3 flex w-full items-center gap-4 overflow-x-auto whitespace-nowrap text-[11px] text-white/80 sm:order-none sm:w-auto sm:gap-6 sm:text-sm">
             <a href="#" className="hover:text-white">
               Home
@@ -41,6 +39,8 @@ export default function Home() {
               Ultime aggiunte
             </a>
           </nav>
+
+          <AuthHeaderActions />
         </div>
       </header>
 

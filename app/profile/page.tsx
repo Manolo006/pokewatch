@@ -1812,14 +1812,14 @@ export default function ProfilePage({
             </span>
           </div>
 
-          <AuthHeaderActions />
-
           <nav className="mobile-top-nav order-3 flex w-full items-center gap-4 overflow-x-auto whitespace-nowrap text-[11px] uppercase tracking-widest text-white/70 sm:order-0 sm:w-auto sm:gap-6 sm:text-xs">
             <Link href="/" className="transition hover:text-white">Home</Link>
             <a href="#" className="transition hover:text-white">Serie TV</a>
             <a href="#" className="transition hover:text-white">Nuovi arrivi</a>
             <Link href="/profile" className="font-bold text-white">Profilo</Link>
           </nav>
+
+          <AuthHeaderActions />
         </div>
       </header>
 
