@@ -45,6 +45,137 @@ type SpriteOption = {
   pokemonDexId?: number;
 };
 
+type AshBadgeMilestone = {
+  key: string;
+  title: string;
+  city: string;
+  itemName: string;
+  badgeSpriteId?: number;
+  animeEpisode: number;
+};
+
+type BadgeSeasonCard = {
+  key: string;
+  title: string;
+  subtitle: string;
+  badges: AshBadgeMilestone[];
+};
+
+const ASH_BADGE_SEASON_CARDS: BadgeSeasonCard[] = [
+  {
+    key: "indigo-kanto",
+    title: "Kanto",
+    subtitle: "Badge da palestra in ordine anime classico.",
+    badges: [
+      { key: "boulder", title: "Medaglia Sasso", city: "Pewter City", itemName: "boulder-badge", badgeSpriteId: 1, animeEpisode: 5 },
+      { key: "cascade", title: "Medaglia Cascata", city: "Cerulean City", itemName: "cascade-badge", badgeSpriteId: 2, animeEpisode: 7 },
+      { key: "thunder", title: "Medaglia Tuono", city: "Vermilion City", itemName: "thunder-badge", badgeSpriteId: 3, animeEpisode: 14 },
+      { key: "rainbow", title: "Medaglia Arcobaleno", city: "Celadon City", itemName: "rainbow-badge", badgeSpriteId: 4, animeEpisode: 26 },
+      { key: "soul", title: "Medaglia Anima", city: "Fuchsia City", itemName: "soul-badge", badgeSpriteId: 5, animeEpisode: 32 },
+      { key: "marsh", title: "Medaglia Palude", city: "Saffron City", itemName: "marsh-badge", badgeSpriteId: 6, animeEpisode: 55 },
+      { key: "volcano", title: "Medaglia Vulcano", city: "Cinnabar Island", itemName: "volcano-badge", badgeSpriteId: 7, animeEpisode: 58 },
+      { key: "earth", title: "Medaglia Terra", city: "Viridian City", itemName: "earth-badge", badgeSpriteId: 8, animeEpisode: 63 },
+    ],
+  },
+  {
+    key: "orange-islands",
+    title: "Orange",
+    subtitle: "Trofei Orange Crew (anime).",
+    badges: [
+      { key: "orange-coral-eye", title: "Coral-Eye Badge", city: "Mikan Island", itemName: "coral-eye-badge", badgeSpriteId: 66, animeEpisode: 86 },
+      { key: "orange-sea-ruby", title: "Sea Ruby Badge", city: "Navel Island", itemName: "sea-ruby-badge", badgeSpriteId: 67, animeEpisode: 100 },
+      { key: "orange-spike-shell", title: "Spike Shell Badge", city: "Trovita Island", itemName: "spike-shell-badge", badgeSpriteId: 68, animeEpisode: 109 },
+      { key: "orange-jade-star", title: "Jade Star Badge", city: "Kumquat Island", itemName: "jade-star-badge", badgeSpriteId: 69, animeEpisode: 112 },
+    ],
+  },
+  {
+    key: "johto",
+    title: "Johto",
+    subtitle: "Badge Johto in ordine anime.",
+    badges: [
+      { key: "zephyr", title: "Medaglia Zefiro", city: "Violet City", itemName: "zephyr-badge", badgeSpriteId: 9, animeEpisode: 132 },
+      { key: "hive", title: "Medaglia Alveare", city: "Azalea Town", itemName: "hive-badge", badgeSpriteId: 10, animeEpisode: 143 },
+      { key: "plain", title: "Medaglia Piana", city: "Goldenrod City", itemName: "plain-badge", badgeSpriteId: 11, animeEpisode: 163 },
+      { key: "fog", title: "Medaglia Nebbia", city: "Ecruteak City", itemName: "fog-badge", badgeSpriteId: 12, animeEpisode: 185 },
+      { key: "storm", title: "Medaglia Tempesta", city: "Cianwood City", itemName: "storm-badge", badgeSpriteId: 13, animeEpisode: 209 },
+      { key: "mineral", title: "Medaglia Minerale", city: "Olivine City", itemName: "mineral-badge", badgeSpriteId: 14, animeEpisode: 226 },
+      { key: "glacier", title: "Medaglia Ghiacciaio", city: "Mahogany Town", itemName: "glacier-badge", badgeSpriteId: 15, animeEpisode: 238 },
+      { key: "rising", title: "Medaglia Dragone", city: "Blackthorn City", itemName: "rising-badge", badgeSpriteId: 16, animeEpisode: 255 },
+    ],
+  },
+  {
+    key: "hoenn",
+    title: "Hoenn",
+    subtitle: "Badge Hoenn in ordine anime.",
+    badges: [
+      { key: "stone", title: "Medaglia Pietra", city: "Rustboro City", itemName: "stone-badge", badgeSpriteId: 17, animeEpisode: 281 },
+      { key: "knuckle", title: "Medaglia Pugno", city: "Dewford Town", itemName: "knuckle-badge", badgeSpriteId: 18, animeEpisode: 292 },
+      { key: "dynamo", title: "Medaglia Dynamo", city: "Mauville City", itemName: "dynamo-badge", badgeSpriteId: 19, animeEpisode: 307 },
+      { key: "heat", title: "Medaglia Calore", city: "Lavaridge Town", itemName: "heat-badge", badgeSpriteId: 20, animeEpisode: 329 },
+      { key: "balance", title: "Medaglia Equilibrio", city: "Petalburg City", itemName: "balance-badge", badgeSpriteId: 21, animeEpisode: 343 },
+      { key: "feather", title: "Medaglia Piuma", city: "Fortree City", itemName: "feather-badge", badgeSpriteId: 22, animeEpisode: 350 },
+      { key: "mind", title: "Medaglia Mente", city: "Mossdeep City", itemName: "mind-badge", badgeSpriteId: 23, animeEpisode: 377 },
+      { key: "rain", title: "Medaglia Pioggia", city: "Sootopolis City", itemName: "rain-badge", badgeSpriteId: 24, animeEpisode: 389 },
+    ],
+  },
+  {
+    key: "sinnoh",
+    title: "Sinnoh",
+    subtitle: "Badge Sinnoh in ordine anime.",
+    badges: [
+      { key: "coal", title: "Medaglia Carbone", city: "Oreburgh City", itemName: "coal-badge", badgeSpriteId: 25, animeEpisode: 406 },
+      { key: "forest", title: "Medaglia Foresta", city: "Eterna City", itemName: "forest-badge", badgeSpriteId: 26, animeEpisode: 440 },
+      { key: "cobble", title: "Medaglia Ciottolo", city: "Hearthome City", itemName: "cobble-badge", badgeSpriteId: 27, animeEpisode: 457 },
+      { key: "fen", title: "Medaglia Acquitrino", city: "Pastoria City", itemName: "fen-badge", badgeSpriteId: 28, animeEpisode: 473 },
+      { key: "relic", title: "Medaglia Reliquia", city: "Hearthome City", itemName: "relic-badge", badgeSpriteId: 29, animeEpisode: 497 },
+      { key: "mine", title: "Medaglia Miniera", city: "Canalave City", itemName: "mine-badge", badgeSpriteId: 30, animeEpisode: 507 },
+      { key: "icicle", title: "Medaglia Ghiacciolo", city: "Snowpoint City", itemName: "icicle-badge", badgeSpriteId: 31, animeEpisode: 522 },
+      { key: "beacon", title: "Medaglia Faro", city: "Sunyshore City", itemName: "beacon-badge", badgeSpriteId: 32, animeEpisode: 539 },
+    ],
+  },
+  {
+    key: "unova",
+    title: "Unima",
+    subtitle: "Badge Unima in ordine anime.",
+    badges: [
+      { key: "trio", title: "Medaglia Trio", city: "Striaton City", itemName: "trio-badge", badgeSpriteId: 33, animeEpisode: 659 },
+      { key: "basic", title: "Medaglia Base", city: "Nacrene City", itemName: "basic-badge", badgeSpriteId: 34, animeEpisode: 670 },
+      { key: "insect", title: "Medaglia Scarabeo", city: "Castelia City", itemName: "insect-badge", badgeSpriteId: 36, animeEpisode: 683 },
+      { key: "bolt", title: "Medaglia Volt", city: "Nimbasa City", itemName: "bolt-badge", badgeSpriteId: 37, animeEpisode: 696 },
+      { key: "quake", title: "Medaglia Sisma", city: "Driftveil City", itemName: "quake-badge", badgeSpriteId: 38, animeEpisode: 726 },
+      { key: "jet", title: "Medaglia Jet", city: "Mistralton City", itemName: "jet-badge", badgeSpriteId: 39, animeEpisode: 738 },
+      { key: "legend", title: "Medaglia Stalattite", city: "Opelucid City", itemName: "legend-badge", badgeSpriteId: 40, animeEpisode: 754 },
+      { key: "wave", title: "Medaglia Arsenico", city: "Humilau City", itemName: "wave-badge", badgeSpriteId: 35, animeEpisode: 773 },
+    ],
+  },
+  {
+    key: "kalos",
+    title: "Kalos",
+    subtitle: "Badge Kalos in ordine anime.",
+    badges: [
+      { key: "bug", title: "Medaglia Coleottero", city: "Santalune City", itemName: "bug-badge", badgeSpriteId: 43, animeEpisode: 806 },
+      { key: "cliff", title: "Medaglia Rupe", city: "Cyllage City", itemName: "cliff-badge", badgeSpriteId: 44, animeEpisode: 823 },
+      { key: "rumble", title: "Medaglia Rissa", city: "Shalour City", itemName: "rumble-badge", badgeSpriteId: 45, animeEpisode: 836 },
+      { key: "plant", title: "Medaglia Pianta", city: "Coumarine City", itemName: "plant-badge", badgeSpriteId: 46, animeEpisode: 849 },
+      { key: "voltage", title: "Medaglia Tensione", city: "Lumiose City", itemName: "voltage-badge", badgeSpriteId: 47, animeEpisode: 861 },
+      { key: "fairy", title: "Medaglia Folletto", city: "Laverre City", itemName: "fairy-badge", badgeSpriteId: 48, animeEpisode: 873 },
+      { key: "psychic", title: "Medaglia Psiche", city: "Anistar City", itemName: "psychic-badge", badgeSpriteId: 49, animeEpisode: 885 },
+      { key: "iceberg", title: "Medaglia Iceberg", city: "Snowbelle City", itemName: "iceberg-badge", badgeSpriteId: 50, animeEpisode: 891 },
+    ],
+  },
+  {
+    key: "alola",
+    title: "Alola",
+    subtitle: "Isola Challenge (anime).",
+    badges: [
+      { key: "alola-melemele", title: "Melemele Stamp", city: "Melemele Island", itemName: "normalium-z", animeEpisode: 952 },
+      { key: "alola-akala", title: "Akala Stamp", city: "Akala Island", itemName: "firium-z", animeEpisode: 986 },
+      { key: "alola-ulu-ulu", title: "Ula'ula Stamp", city: "Ula'ula Island", itemName: "electrium-z", animeEpisode: 1039 },
+      { key: "alola-poni", title: "Poni Stamp", city: "Poni Island", itemName: "dragonium-z", animeEpisode: 1089 },
+    ],
+  },
+];
+
 const FILLER_STORAGE_PREFIX = "pokewatch-filler-season";
 const WATCHED_STORAGE_PREFIX = "pokewatch-watched-season";
 
@@ -209,6 +340,19 @@ function formatSpriteLabel(name: string) {
     .join(" ");
 }
 
+function getPokeApiItemSpriteUrl(itemName: string) {
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${itemName}.png`;
+}
+
+function getPokeApiBadgeSpriteUrl(badgeId: number) {
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/badges/${badgeId}.png`;
+}
+
+function getBadgeImageUrl(badge: AshBadgeMilestone) {
+  if (badge.badgeSpriteId) return getPokeApiBadgeSpriteUrl(badge.badgeSpriteId);
+  return getPokeApiItemSpriteUrl(badge.itemName);
+}
+
 const getSeasonImageCandidates = (seasonNumber: number) => [
   `/seasons/s${seasonNumber}.jpg`,
   `/seasons/s${seasonNumber}.jpeg`,
@@ -337,6 +481,7 @@ export default function ProfilePage({
   const isPublicView = Boolean(viewedUserId && viewedUserId !== user?.uid);
   const joinDaySource = publicJoinedAt ?? ownProfileSettings?.joinedAt ?? user?.metadata.creationTime;
   const [selectedSeasonNumber, setSelectedSeasonNumber] = useState<number | null>(null);
+  const [selectedBadgeRegionKey, setSelectedBadgeRegionKey] = useState<string | null>(null);
   const [seasonCarouselStart, setSeasonCarouselStart] = useState(0);
   const [watchedBySeason, setWatchedBySeason] = useState<Record<number, Record<number, boolean>>>(() => {
     if (typeof window === "undefined") return {};
@@ -1167,32 +1312,36 @@ export default function ProfilePage({
   const totalEntries = overviewItems.reduce((sum, item) => sum + item.entries, 0);
   const safeTotalEntries = totalEntries > 0 ? totalEntries : 1;
 
-  const badges = [
-    {
-      title: "Primo episodio",
-      description: "Guarda almeno 1 episodio.",
-      unlocked: watchedStats.episodesWatched >= 1,
-      icon: "🎬",
-    },
-    {
-      title: "Maratoneta",
-      description: "Guarda almeno 50 episodi.",
-      unlocked: watchedStats.episodesWatched >= 50,
-      icon: "🔥",
-    },
-    {
-      title: "Canon Master",
-      description: "Guarda almeno 100 episodi non-filler.",
-      unlocked: watchedTotals["non-filler"] >= 100,
-      icon: "🏆",
-    },
-    {
-      title: "Anti-filler",
-      description: "Completa almeno 30 episodi filler.",
-      unlocked: watchedTotals.filler >= 30,
-      icon: "🛡️",
-    },
-  ] as const;
+  const badgeSeasonCards = useMemo(
+    () =>
+      ASH_BADGE_SEASON_CARDS.map((card) => {
+        const badges = card.badges.map((badge) => ({
+          ...badge,
+          imageUrl: getBadgeImageUrl(badge),
+          unlocked: watchedStats.episodesWatched >= badge.animeEpisode,
+          description: `Sblocco episodio anime ${badge.animeEpisode}.`,
+        }));
+
+        const unlockedCount = badges.filter((badge) => badge.unlocked).length;
+
+        return {
+          ...card,
+          badges,
+          unlockedCount,
+          totalCount: badges.length,
+          progressPercent: badges.length > 0 ? (unlockedCount / badges.length) * 100 : 0,
+        };
+      }),
+    [watchedStats.episodesWatched]
+  );
+
+  const unlockedBadgesCount = badgeSeasonCards.reduce((sum, card) => sum + card.unlockedCount, 0);
+  const totalBadgesCount = badgeSeasonCards.reduce((sum, card) => sum + card.totalCount, 0);
+  const badgeProgressPercent = totalBadgesCount > 0 ? (unlockedBadgesCount / totalBadgesCount) * 100 : 0;
+  const selectedBadgeRegion = useMemo(
+    () => badgeSeasonCards.find((card) => card.key === selectedBadgeRegionKey) ?? null,
+    [badgeSeasonCards, selectedBadgeRegionKey]
+  );
 
   const seasonProgress = useMemo(() => {
     return allSeasons.map((season) => {
@@ -2188,38 +2337,32 @@ export default function ProfilePage({
               </article>
 
               <article className="rounded-md border border-white/10 bg-[#181818] p-5 sm:p-6">
-                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-white">Badges</p>
-                <p className="mt-1 text-xs text-slate-300">I tuoi avanzamenti sbloccati su PokéWatch.</p>
+                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-white">Stagioni medaglie (PokéAPI)</p>
+                <p className="mt-1 text-xs text-slate-300">Una card per ogni stagione/lega medaglie di Ash.</p>
                 <div className="mt-3 h-px w-full bg-linear-to-r from-transparent via-white/20 to-transparent" />
 
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  {badges.map((badge) => (
-                    <div
-                      key={badge.title}
-                      className={`rounded border p-3 ${badge.unlocked ? "border-emerald-400/35 bg-emerald-500/10" : "border-white/10 bg-black/25"}`}
+                <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {badgeSeasonCards.map((card) => (
+                    <button
+                      key={card.key}
+                      type="button"
+                      onClick={() => setSelectedBadgeRegionKey(card.key)}
+                      className="rounded border border-white/10 bg-black/25 p-2.5 text-left transition hover:border-white/25 hover:bg-black/40"
                     >
-                      <div className="flex items-start gap-3">
-                        <span className="text-xl" aria-hidden="true">{badge.icon}</span>
-                        <div>
-                          <p className="text-sm font-bold text-white">{badge.title}</p>
-                          <p className="mt-0.5 text-xs text-white/70">{badge.description}</p>
-                        </div>
+                      <p className="text-sm font-bold text-white">{card.title}</p>
+                      <p className="mt-0.5 text-[10px] text-white/60">{card.unlockedCount}/{card.totalCount} sbloccati</p>
+                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+                        <div className="h-full rounded-full bg-[#e50914]" style={{ width: `${card.progressPercent}%` }} />
                       </div>
-                      <p className={`mt-3 text-[11px] font-semibold uppercase tracking-wide ${badge.unlocked ? "text-emerald-300" : "text-white/50"}`}>
-                        {badge.unlocked ? "Sbloccato" : "Bloccato"}
-                      </p>
-                    </div>
+                    </button>
                   ))}
                 </div>
 
                 <div className="mt-6 rounded border border-white/15 bg-black/30 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-300">Progressione badge</p>
-                  <p className="mt-2 text-sm text-white/90">{badges.filter((badge) => badge.unlocked).length} / {badges.length} badge sbloccati</p>
+                  <p className="mt-2 text-sm text-white/90">{unlockedBadgesCount} / {totalBadgesCount} badge sbloccati</p>
                   <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full bg-linear-to-rrom-[#e50914] to-[#ff5a5f]"
-                      style={{ width: `${(badges.filter((badge) => badge.unlocked).length / badges.length) * 100}%` }}
-                    />
+                    <div className="h-full rounded-full bg-linear-to-r from-[#e50914] to-[#ff5a5f]" style={{ width: `${badgeProgressPercent}%` }} />
                   </div>
                   <p className="mt-2 text-xs text-slate-300">Continua a guardare per sbloccare gli altri avanzamenti.</p>
                 </div>
@@ -2231,6 +2374,68 @@ export default function ProfilePage({
       </main>
 
       {avatarPickerModal}
+
+      {selectedBadgeRegion ? (
+        <div
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/80 p-3 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setSelectedBadgeRegionKey(null)}
+        >
+          <div
+            className="max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-md border border-white/15 bg-[#181818] shadow-2xl shadow-black/60"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-5">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/60">Regione</p>
+                <h3 className="text-xl font-black text-white">{selectedBadgeRegion.title}</h3>
+                <p className="text-xs text-white/65">{selectedBadgeRegion.subtitle}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedBadgeRegionKey(null)}
+                className="rounded border border-white/20 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/10"
+              >
+                Chiudi
+              </button>
+            </div>
+
+            <div className="max-h-[70vh] overflow-y-auto p-4 sm:p-5">
+              <div className="grid gap-2 sm:grid-cols-2">
+                {selectedBadgeRegion.badges.map((badge) => (
+                  <div
+                    key={badge.key}
+                    className={`rounded border p-2.5 ${badge.unlocked ? "border-emerald-400/35 bg-emerald-500/10" : "border-white/10 bg-black/25"}`}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <img
+                        src={badge.imageUrl}
+                        alt={badge.title}
+                        loading="lazy"
+                        className="h-8 w-8 rounded bg-black/40 p-1 object-contain"
+                        onError={(event) => {
+                          const target = event.currentTarget;
+                          const fallback = getPokeApiItemSpriteUrl("poke-ball");
+                          if (target.src !== fallback) target.src = fallback;
+                        }}
+                      />
+                      <div>
+                        <p className="text-xs font-bold text-white">{badge.title}</p>
+                        <p className="mt-0.5 text-[10px] text-white/55">{badge.city}</p>
+                        <p className="mt-0.5 text-[10px] text-white/70">{badge.description}</p>
+                      </div>
+                    </div>
+                    <p className={`mt-2 text-[10px] font-semibold uppercase tracking-wide ${badge.unlocked ? "text-emerald-300" : "text-white/50"}`}>
+                      {badge.unlocked ? "Sbloccato" : "Bloccato"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {selectedSeasonDetail ? (
         <div
