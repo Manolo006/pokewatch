@@ -168,7 +168,7 @@ const ASH_BADGE_SEASON_CARDS: BadgeSeasonCard[] = [
     title: "Alola",
     subtitle: "Isola Challenge (anime).",
     badges: [
-      { key: "alola-normalium", title: "Normalium Z", city: "Melemele Island", itemName: "normalium-z--held", animeEpisode: 952 },
+      { key: "alola-normalium", title: "Normalium Z", city: "Melemele Island", itemName: "noheld", animeEpisode: 952 },
       { key: "alola-electrium", title: "Electrium Z", city: "Akala Island", itemName: "electrium-z--held", animeEpisode: 986 },
       { key: "alola-grassium", title: "Grassium Z", city: "Akala Island", itemName: "grassium-z--held", animeEpisode: 1005 },
       { key: "alola-rockium", title: "Rockium Z", city: "Ula'ula Island", itemName: "rockium-z--held", animeEpisode: 1039 },
@@ -370,39 +370,36 @@ const getSeasonImageCandidates = (seasonNumber: number) => [
   `../seasons/s${seasonNumber}.webp`,
 ];
 
-function SeasonCardImage({ seasonNumber, title, accent }: { seasonNumber: number; title: string; accent: string }) {
-  const [imageSrc, setImageSrc] = useState<string | null>(null);
+const seasonImageSrcCache = new Map<number, string | null>();
 
-  useEffect(() => {
-    let active = true;
-    const candidates = getSeasonImageCandidates(seasonNumber);
+function loadImageSource(src: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const image = new window.Image();
+    image.onload = () => resolve(true);
+    image.onerror = () => resolve(false);
+    image.src = src;
+  });
+}
 
-    const tryLoad = (index: number) => {
-      if (!active) return;
-      if (index >= candidates.length) {
-        setImageSrc(null);
-        return;
-      }
+async function resolveSeasonImageSrc(seasonNumber: number): Promise<string | null> {
+  if (seasonImageSrcCache.has(seasonNumber)) {
+    return seasonImageSrcCache.get(seasonNumber) ?? null;
+  }
 
-      const candidate = candidates[index];
-      const image = new window.Image();
-      image.onload = () => {
-        if (!active) return;
-        setImageSrc(candidate);
-      };
-      image.onerror = () => {
-        tryLoad(index + 1);
-      };
-      image.src = candidate;
-    };
+  const candidates = getSeasonImageCandidates(seasonNumber);
+  for (const candidate of candidates) {
+    const loaded = await loadImageSource(candidate);
+    if (loaded) {
+      seasonImageSrcCache.set(seasonNumber, candidate);
+      return candidate;
+    }
+  }
 
-    tryLoad(0);
+  seasonImageSrcCache.set(seasonNumber, null);
+  return null;
+}
 
-    return () => {
-      active = false;
-    };
-  }, [seasonNumber]);
-
+function SeasonCardImage({ title, accent, imageSrc }: { title: string; accent: string; imageSrc: string | null }) {
   if (imageSrc) {
     return <Image src={imageSrc} alt={title} fill className="object-cover" sizes="(max-width: 768px) 100vw, 33vw" />;
   }
@@ -489,6 +486,7 @@ export default function ProfilePage({
     if (typeof window === "undefined") return false;
     return window.innerWidth < 768;
   });
+  const [seasonImageSrcMap, setSeasonImageSrcMap] = useState<Record<number, string | null>>({});
   const [watchedBySeason, setWatchedBySeason] = useState<Record<number, Record<number, boolean>>>(() => {
     if (typeof window === "undefined") return {};
     return parseStoredWatchedBySeason(window.localStorage);
@@ -853,6 +851,35 @@ export default function ProfilePage({
 
     return () => {
       window.removeEventListener("resize", onResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const preloadSeasonCardImages = async () => {
+      const entries = await Promise.all(
+        allSeasons.map(async (season) => {
+          const src = await resolveSeasonImageSrc(season.season);
+          return [season.season, src] as const;
+        })
+      );
+
+      if (!active) return;
+
+      setSeasonImageSrcMap((prev) => {
+        const next = { ...prev };
+        entries.forEach(([seasonNumber, src]) => {
+          next[seasonNumber] = src;
+        });
+        return next;
+      });
+    };
+
+    void preloadSeasonCardImages();
+
+    return () => {
+      active = false;
     };
   }, []);
 
@@ -1974,7 +2001,7 @@ export default function ProfilePage({
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(229,9,20,.22),transparent_42%),radial-gradient(circle_at_80%_0%,rgba(115,115,115,.18),transparent_38%)]" />
 
       <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-375 flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-8 sm:py-4">
+        <div className="mx-auto flex w-full max-w-375 flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-4 sm:py-4">
           <div className="flex items-center gap-2.5 sm:gap-4">
             <Link href="/" aria-label="Vai alla home">
               <Image src="./logo.png" alt="PokéWatch" width={180} height={42} className="h-auto w-30.5 sm:w-45" priority />
@@ -1995,7 +2022,7 @@ export default function ProfilePage({
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto w-full max-w-375 px-4 py-8 sm:px-8 sm:py-10">
+      <main className="relative z-10 mx-auto w-full max-w-375 px-4 py-8 sm:px-4 sm:py-10">
         {loading ? (
           <div className="rounded-md border border-white/10 bg-[#181818] p-8 text-sm text-white/70">Caricamento profilo...</div>
         ) : !user && !viewedUserId ? (
@@ -2016,7 +2043,7 @@ export default function ProfilePage({
                 <div className="absolute inset-0 bg-linear-to-t from-[#181818] via-transparent to-transparent" />
               </div>
 
-              <div className="relative px-5 pb-6 pt-10 sm:px-8 sm:pb-8 sm:pt-12">
+              <div className="relative px-4 pb-6 pt-10 sm:px-4 sm:pb-8 sm:pt-12">
                 <div
                   className="absolute -top-12 left-1/2 flex h-24 w-24 -translate-x-1/2 items-center justify-center overflow-hidden rounded border border-white/20 text-4xl font-black text-white shadow-xl sm:h-28 sm:w-28"
                   style={{ backgroundColor: profileImageBgColor }}
@@ -2309,13 +2336,13 @@ export default function ProfilePage({
                       <FaChevronRight aria-hidden="true" />
                     </button>
 
-                    <div className="grid gap-2 px-10 md:grid-cols-3 md:gap-3">
+                    <div className="grid gap-2 px-4 md:grid-cols-3 md:gap-3">
                       {visibleSeasonCards.map((entry) => (
                         <button
                           key={entry.season.season}
                           type="button"
                           onClick={() => setSelectedSeasonNumber(entry.season.season)}
-                          className="group relative flex min-h-64 flex-col overflow-hidden rounded border border-white/10 bg-[#111] text-left transition duration-300 hover:scale-[1.02] hover:border-white/35 sm:min-h-82.5"
+                          className="group relative flex h-72 flex-col overflow-hidden rounded border border-white/10 bg-[#111] text-left transition duration-300 hover:scale-[1.02] hover:border-white/35 sm:h-82.5"
                         >
                           {entry.progress >= 100 ? (
                             <span className="absolute right-2 top-2 z-20 inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-sm font-black text-white shadow-md shadow-black/30">
@@ -2325,9 +2352,9 @@ export default function ProfilePage({
 
                           <div className="relative aspect-video w-full overflow-hidden p-3 sm:p-4">
                             <SeasonCardImage
-                              seasonNumber={entry.season.season}
                               title={entry.season.title}
                               accent={entry.season.accent}
+                              imageSrc={seasonImageSrcMap[entry.season.season] ?? null}
                             />
                             <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-black/10" />
                             <div className="relative z-10">
@@ -2338,8 +2365,8 @@ export default function ProfilePage({
 
                           <div className="flex flex-1 flex-col justify-between p-3 sm:p-4">
                             <div>
-                              <p className="line-clamp-2 text-base font-bold leading-snug text-white">{entry.season.title}</p>
-                              <p className="mt-2 line-clamp-3 text-sm text-white/70">{entry.season.synopsis}</p>
+                              <p className="line-clamp-2 min-h-[2.75rem] text-base font-bold leading-snug text-white">{entry.season.title}</p>
+                              <p className="mt-2 line-clamp-3 min-h-[3.75rem] text-sm text-white/70">{entry.season.synopsis}</p>
                             </div>
 
                             <div className="mt-3 space-y-2">
@@ -2473,9 +2500,9 @@ export default function ProfilePage({
           >
             <div className="relative h-36 overflow-hidden sm:h-44">
               <SeasonCardImage
-                seasonNumber={selectedSeasonDetail.season.season}
                 title={selectedSeasonDetail.season.title}
                 accent={selectedSeasonDetail.season.accent}
+                imageSrc={seasonImageSrcMap[selectedSeasonDetail.season.season] ?? null}
               />
               <div className="absolute inset-0 bg-linear-to-t from-black/45 via-black/10 to-transparent" />
             </div>
