@@ -168,10 +168,12 @@ const ASH_BADGE_SEASON_CARDS: BadgeSeasonCard[] = [
     title: "Alola",
     subtitle: "Isola Challenge (anime).",
     badges: [
-      { key: "alola-melemele", title: "Melemele Stamp", city: "Melemele Island", itemName: "normalium-z", animeEpisode: 952 },
-      { key: "alola-akala", title: "Akala Stamp", city: "Akala Island", itemName: "firium-z", animeEpisode: 986 },
-      { key: "alola-ulu-ulu", title: "Ula'ula Stamp", city: "Ula'ula Island", itemName: "electrium-z", animeEpisode: 1039 },
-      { key: "alola-poni", title: "Poni Stamp", city: "Poni Island", itemName: "dragonium-z", animeEpisode: 1089 },
+      { key: "alola-normalium", title: "Normalium Z", city: "Melemele Island", itemName: "normalium-z--held", animeEpisode: 952 },
+      { key: "alola-electrium", title: "Electrium Z", city: "Akala Island", itemName: "electrium-z--held", animeEpisode: 986 },
+      { key: "alola-grassium", title: "Grassium Z", city: "Akala Island", itemName: "grassium-z--held", animeEpisode: 1005 },
+      { key: "alola-rockium", title: "Rockium Z", city: "Ula'ula Island", itemName: "rockium-z--held", animeEpisode: 1039 },
+      { key: "alola-lycanium", title: "Lycanium Z", city: "Ula'ula Island", itemName: "lycanium-z--held", animeEpisode: 1064 },
+      { key: "alola-steelium", title: "Steelium Z", city: "Poni Island", itemName: "steelium-z--held", animeEpisode: 1089 },
     ],
   },
 ];
