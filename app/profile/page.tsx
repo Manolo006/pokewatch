@@ -485,6 +485,10 @@ export default function ProfilePage({
   const [selectedSeasonNumber, setSelectedSeasonNumber] = useState<number | null>(null);
   const [selectedBadgeRegionKey, setSelectedBadgeRegionKey] = useState<string | null>(null);
   const [seasonCarouselStart, setSeasonCarouselStart] = useState(0);
+  const [isMobileCarousel, setIsMobileCarousel] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < 768;
+  });
   const [watchedBySeason, setWatchedBySeason] = useState<Record<number, Record<number, boolean>>>(() => {
     if (typeof window === "undefined") return {};
     return parseStoredWatchedBySeason(window.localStorage);
@@ -838,6 +842,19 @@ export default function ProfilePage({
     setPokemonSearchError(merged.length === 0 ? "Nessun Pokémon trovato con questa ricerca." : null);
     setIsSearchingPokemon(false);
   }, [avatarCategory, avatarSearchQuery, isAvatarPickerOpen, pokemonSprites]);
+
+  useEffect(() => {
+    const onResize = () => {
+      setIsMobileCarousel(window.innerWidth < 768);
+    };
+
+    onResize();
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      window.removeEventListener("resize", onResize);
+    };
+  }, []);
 
   const saveProfileBasics = async (scope: "all" | "displayName" | "nickname" = "all") => {
     if (!user || !db) return;
@@ -1367,9 +1384,13 @@ export default function ProfilePage({
     [selectedSeasonNumber, seasonProgress]
   );
 
-  const maxCarouselStart = Math.max(0, seasonProgress.length - 3);
+  const visibleSeasonCardsCount = isMobileCarousel ? 1 : 3;
+  const maxCarouselStart = Math.max(0, seasonProgress.length - visibleSeasonCardsCount);
   const normalizedCarouselStart = Math.min(seasonCarouselStart, maxCarouselStart);
-  const visibleSeasonCards = seasonProgress.slice(normalizedCarouselStart, normalizedCarouselStart + 3);
+  const visibleSeasonCards = seasonProgress.slice(
+    normalizedCarouselStart,
+    normalizedCarouselStart + visibleSeasonCardsCount
+  );
   const searchValue = avatarSearchQuery.trim().toLowerCase();
   const filteredItemSprites = itemSprites.filter((sprite) => {
     if (!searchValue) return true;
@@ -2288,13 +2309,13 @@ export default function ProfilePage({
                       <FaChevronRight aria-hidden="true" />
                     </button>
 
-                    <div className="grid gap-3 px-10 md:grid-cols-3">
+                    <div className="grid gap-2 px-10 md:grid-cols-3 md:gap-3">
                       {visibleSeasonCards.map((entry) => (
                         <button
                           key={entry.season.season}
                           type="button"
                           onClick={() => setSelectedSeasonNumber(entry.season.season)}
-                          className="group relative flex min-h-82.5 flex-col overflow-hidden rounded border border-white/10 bg-[#111] text-left transition duration-300 hover:scale-[1.02] hover:border-white/35"
+                          className="group relative flex min-h-64 flex-col overflow-hidden rounded border border-white/10 bg-[#111] text-left transition duration-300 hover:scale-[1.02] hover:border-white/35 sm:min-h-82.5"
                         >
                           {entry.progress >= 100 ? (
                             <span className="absolute right-2 top-2 z-20 inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-sm font-black text-white shadow-md shadow-black/30">
@@ -2302,7 +2323,7 @@ export default function ProfilePage({
                             </span>
                           ) : null}
 
-                          <div className="relative aspect-video w-full overflow-hidden p-4">
+                          <div className="relative aspect-video w-full overflow-hidden p-3 sm:p-4">
                             <SeasonCardImage
                               seasonNumber={entry.season.season}
                               title={entry.season.title}
@@ -2315,7 +2336,7 @@ export default function ProfilePage({
                             </div>
                           </div>
 
-                          <div className="flex flex-1 flex-col justify-between p-4">
+                          <div className="flex flex-1 flex-col justify-between p-3 sm:p-4">
                             <div>
                               <p className="line-clamp-2 text-base font-bold leading-snug text-white">{entry.season.title}</p>
                               <p className="mt-2 line-clamp-3 text-sm text-white/70">{entry.season.synopsis}</p>
