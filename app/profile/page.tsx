@@ -168,7 +168,7 @@ const ASH_BADGE_SEASON_CARDS: BadgeSeasonCard[] = [
     title: "Alola",
     subtitle: "Isola Challenge (anime).",
     badges: [
-      { key: "alola-normalium", title: "Normalium Z", city: "Melemele Island", itemName: "noheld", animeEpisode: 952 },
+      { key: "alola-normalium", title: "Normalium Z", city: "Melemele Island", itemName: "normalium-z--held", animeEpisode: 952 },
       { key: "alola-electrium", title: "Electrium Z", city: "Akala Island", itemName: "electrium-z--held", animeEpisode: 986 },
       { key: "alola-grassium", title: "Grassium Z", city: "Akala Island", itemName: "grassium-z--held", animeEpisode: 1005 },
       { key: "alola-rockium", title: "Rockium Z", city: "Ula'ula Island", itemName: "rockium-z--held", animeEpisode: 1039 },
@@ -480,7 +480,6 @@ export default function ProfilePage({
   const isPublicView = Boolean(viewedUserId && viewedUserId !== user?.uid);
   const joinDaySource = publicJoinedAt ?? ownProfileSettings?.joinedAt ?? user?.metadata.creationTime;
   const [selectedSeasonNumber, setSelectedSeasonNumber] = useState<number | null>(null);
-  const [selectedBadgeRegionKey, setSelectedBadgeRegionKey] = useState<string | null>(null);
   const [seasonCarouselStart, setSeasonCarouselStart] = useState(0);
   const [isMobileCarousel, setIsMobileCarousel] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -1433,10 +1432,6 @@ export default function ProfilePage({
   const unlockedBadgesCount = badgeSeasonCards.reduce((sum, card) => sum + card.unlockedCount, 0);
   const totalBadgesCount = badgeSeasonCards.reduce((sum, card) => sum + card.totalCount, 0);
   const badgeProgressPercent = totalBadgesCount > 0 ? (unlockedBadgesCount / totalBadgesCount) * 100 : 0;
-  const selectedBadgeRegion = useMemo(
-    () => badgeSeasonCards.find((card) => card.key === selectedBadgeRegionKey) ?? null,
-    [badgeSeasonCards, selectedBadgeRegionKey]
-  );
 
   const seasonProgress = useMemo(() => {
     return allSeasons.map((season) => {
@@ -2437,23 +2432,43 @@ export default function ProfilePage({
 
               <article className="rounded-md border border-white/10 bg-[#181818] p-5 sm:p-6">
                 <p className="text-sm font-semibold uppercase tracking-[0.12em] text-white">Stagioni medaglie (PokéAPI)</p>
-                <p className="mt-1 text-xs text-slate-300">Una card per ogni stagione/lega medaglie di Ash.</p>
+                <p className="mt-1 text-xs text-slate-300">Tutte le medaglie in ordine, visibili in griglia.</p>
                 <div className="mt-3 h-px w-full bg-linear-to-r from-transparent via-white/20 to-transparent" />
 
-                <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div className="mt-4 grid grid-cols-1 gap-2 lg:grid-cols-2">
                   {badgeSeasonCards.map((card) => (
-                    <button
-                      key={card.key}
-                      type="button"
-                      onClick={() => setSelectedBadgeRegionKey(card.key)}
-                      className="rounded border border-white/10 bg-black/25 p-2.5 text-left transition hover:border-white/25 hover:bg-black/40"
-                    >
-                      <p className="text-sm font-bold text-white">{card.title}</p>
-                      <p className="mt-0.5 text-[10px] text-white/60">{card.unlockedCount}/{card.totalCount} sbloccati</p>
-                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
-                        <div className="h-full rounded-full bg-[#e50914]" style={{ width: `${card.progressPercent}%` }} />
+                    <section key={card.key} className="rounded border border-white/10 bg-black/20 p-2">
+                      <div className="mb-1.5 flex items-center justify-between gap-2">
+                        <p className="text-sm font-bold text-white">{card.title}</p>
+                        <p className="text-[10px] text-white/60">{card.unlockedCount}/{card.totalCount} sbloccati</p>
                       </div>
-                    </button>
+
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {card.badges.map((badge) => (
+                          <div
+                            key={badge.key}
+                            title={badge.title}
+                            className={`group relative flex aspect-square items-center justify-center rounded border p-1 ${badge.unlocked ? "border-emerald-400/35 bg-emerald-500/10" : "border-white/10 bg-black/30"}`}
+                          >
+                            <img
+                              src={badge.imageUrl}
+                              alt={badge.title}
+                              loading="lazy"
+                              className={`h-12 w-12 object-contain ${badge.unlocked ? "" : "grayscale saturate-0 opacity-70"}`}
+                              onError={(event) => {
+                                const target = event.currentTarget;
+                                const fallback = getPokeApiItemSpriteUrl("poke-ball");
+                                if (target.src !== fallback) target.src = fallback;
+                              }}
+                            />
+
+                            <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 rounded bg-black px-2 py-1 text-[10px] font-semibold whitespace-nowrap text-white shadow-lg group-hover:block">
+                              {badge.title}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
                   ))}
                 </div>
 
@@ -2473,68 +2488,6 @@ export default function ProfilePage({
       </main>
 
       {avatarPickerModal}
-
-      {selectedBadgeRegion ? (
-        <div
-          className="fixed inset-0 z-60 flex items-center justify-center bg-black/80 p-3 sm:p-6"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setSelectedBadgeRegionKey(null)}
-        >
-          <div
-            className="max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-md border border-white/15 bg-[#181818] shadow-2xl shadow-black/60"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-5">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/60">Regione</p>
-                <h3 className="text-xl font-black text-white">{selectedBadgeRegion.title}</h3>
-                <p className="text-xs text-white/65">{selectedBadgeRegion.subtitle}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedBadgeRegionKey(null)}
-                className="rounded border border-white/20 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/10"
-              >
-                Chiudi
-              </button>
-            </div>
-
-            <div className="max-h-[70vh] overflow-y-auto p-4 sm:p-5">
-              <div className="grid gap-2 sm:grid-cols-2">
-                {selectedBadgeRegion.badges.map((badge) => (
-                  <div
-                    key={badge.key}
-                    className={`rounded border p-2.5 ${badge.unlocked ? "border-emerald-400/35 bg-emerald-500/10" : "border-white/10 bg-black/25"}`}
-                  >
-                    <div className="flex items-start gap-2.5">
-                      <img
-                        src={badge.imageUrl}
-                        alt={badge.title}
-                        loading="lazy"
-                        className="h-8 w-8 rounded bg-black/40 p-1 object-contain"
-                        onError={(event) => {
-                          const target = event.currentTarget;
-                          const fallback = getPokeApiItemSpriteUrl("poke-ball");
-                          if (target.src !== fallback) target.src = fallback;
-                        }}
-                      />
-                      <div>
-                        <p className="text-xs font-bold text-white">{badge.title}</p>
-                        <p className="mt-0.5 text-[10px] text-white/55">{badge.city}</p>
-                        <p className="mt-0.5 text-[10px] text-white/70">{badge.description}</p>
-                      </div>
-                    </div>
-                    <p className={`mt-2 text-[10px] font-semibold uppercase tracking-wide ${badge.unlocked ? "text-emerald-300" : "text-white/50"}`}>
-                      {badge.unlocked ? "Sbloccato" : "Bloccato"}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       {selectedSeasonDetail ? (
         <div
