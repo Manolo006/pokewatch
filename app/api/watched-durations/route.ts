@@ -1,6 +1,9 @@
 import { getSeasonPlaylistUrl } from "@/app/data/seasonPlaylists";
 import { getYouTubePlaylistVideos } from "@/app/lib/youtubePlaylist";
 
+export const dynamic = "force-static";
+export const revalidate = 3600;
+
 type SeasonEpisodeDurationMap = Record<number, Record<number, number>>;
 
 function parseDurationLabelToSeconds(duration?: string) {
