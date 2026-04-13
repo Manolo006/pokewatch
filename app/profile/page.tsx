@@ -102,7 +102,7 @@ const ASH_BADGE_SEASON_CARDS: BadgeSeasonCard[] = [
       { key: "plain", title: "Medaglia Piana", city: "Goldenrod City", itemName: "plain-badge", badgeSpriteId: 11, unlockTarget: { season: 4, episode: 12 } },
       { key: "fog", title: "Medaglia Nebbia", city: "Ecruteak City", itemName: "fog-badge", badgeSpriteId: 12, unlockTarget: { season: 4, episode: 34 } },
       { key: "storm", title: "Medaglia Tempesta", city: "Cianwood City", itemName: "storm-badge", badgeSpriteId: 13, unlockTarget: { season: 5, episode: 6 } },
-      {key: "mineral", title: "Medaglia Minerale", city: "Olivine City", itemName: "mineral-badge", badgeSpriteId: 14, unlockTarget: { season: 5, episode: 23 }, unlockTarget: { season: 5, episode: 15 }},
+      { key: "mineral", title: "Medaglia Minerale", city: "Olivine City", itemName: "mineral-badge", badgeSpriteId: 14, unlockTarget: { season: 5, episode: 15 } },
       { key: "glacier", title: "Medaglia Ghiacciaio", city: "Mahogany Town", itemName: "glacier-badge", badgeSpriteId: 15, unlockTarget: { season: 5, episode: 35 } },
       { key: "rising", title: "Medaglia Dragone", city: "Blackthorn City", itemName: "rising-badge", badgeSpriteId: 16, unlockTarget: { season: 5, episode: 52 } },
     ],
