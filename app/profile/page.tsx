@@ -51,7 +51,11 @@ type AshBadgeMilestone = {
   city: string;
   itemName: string;
   badgeSpriteId?: number;
-  animeEpisode: number;
+  animeEpisode?: number;
+  unlockTarget?: {
+    season: number;
+    episode: number;
+  };
 };
 
 type BadgeSeasonCard = {
@@ -67,25 +71,25 @@ const ASH_BADGE_SEASON_CARDS: BadgeSeasonCard[] = [
     title: "Kanto",
     subtitle: "Badge da palestra in ordine anime classico.",
     badges: [
-      { key: "boulder", title: "Medaglia Sasso", city: "Pewter City", itemName: "boulder-badge", badgeSpriteId: 1, animeEpisode: 5 },
-      { key: "cascade", title: "Medaglia Cascata", city: "Cerulean City", itemName: "cascade-badge", badgeSpriteId: 2, animeEpisode: 7 },
-      { key: "thunder", title: "Medaglia Tuono", city: "Vermilion City", itemName: "thunder-badge", badgeSpriteId: 3, animeEpisode: 14 },
-      { key: "rainbow", title: "Medaglia Arcobaleno", city: "Celadon City", itemName: "rainbow-badge", badgeSpriteId: 4, animeEpisode: 26 },
-      { key: "soul", title: "Medaglia Anima", city: "Fuchsia City", itemName: "soul-badge", badgeSpriteId: 5, animeEpisode: 32 },
-      { key: "marsh", title: "Medaglia Palude", city: "Saffron City", itemName: "marsh-badge", badgeSpriteId: 6, animeEpisode: 55 },
-      { key: "volcano", title: "Medaglia Vulcano", city: "Cinnabar Island", itemName: "volcano-badge", badgeSpriteId: 7, animeEpisode: 58 },
-      { key: "earth", title: "Medaglia Terra", city: "Viridian City", itemName: "earth-badge", badgeSpriteId: 8, animeEpisode: 63 },
+      { key: "boulder", title: "Medaglia Sasso", city: "Pewter City", itemName: "boulder-badge", badgeSpriteId: 1, unlockTarget: { season: 1, episode: 5 } },
+      { key: "cascade", title: "Medaglia Cascata", city: "Cerulean City", itemName: "cascade-badge", badgeSpriteId: 2, unlockTarget: { season: 1, episode: 7 } },
+      { key: "thunder", title: "Medaglia Tuono", city: "Vermilion City", itemName: "thunder-badge", badgeSpriteId: 3, unlockTarget: { season: 1, episode: 14 } },
+      { key: "rainbow", title: "Medaglia Arcobaleno", city: "Celadon City", itemName: "rainbow-badge", badgeSpriteId: 4, unlockTarget: { season: 1, episode: 26 } },
+      { key: "soul", title: "Medaglia Anima", city: "Fuchsia City", itemName: "soul-badge", badgeSpriteId: 5, unlockTarget: { season: 1, episode: 32 } },
+      { key: "marsh", title: "Medaglia Palude", city: "Saffron City", itemName: "marsh-badge", badgeSpriteId: 6, unlockTarget: { season: 2, episode: 3 } },
+      { key: "volcano", title: "Medaglia Vulcano", city: "Cinnabar Island", itemName: "volcano-badge", badgeSpriteId: 7, unlockTarget: { season: 2, episode: 6 } },
+      { key: "earth", title: "Medaglia Terra", city: "Viridian City", itemName: "earth-badge", badgeSpriteId: 8, unlockTarget: { season: 2, episode: 11 } },
     ],
   },
   {
     key: "orange-islands",
-    title: "Orange",
-    subtitle: "Trofei Orange Crew (anime).",
+    title: "Isole Orange",
+    subtitle: "Trofei Orange.",
     badges: [
-      { key: "orange-coral-eye", title: "Coral-Eye Badge", city: "Mikan Island", itemName: "coral-eye-badge", badgeSpriteId: 66, animeEpisode: 86 },
-      { key: "orange-sea-ruby", title: "Sea Ruby Badge", city: "Navel Island", itemName: "sea-ruby-badge", badgeSpriteId: 67, animeEpisode: 100 },
-      { key: "orange-spike-shell", title: "Spike Shell Badge", city: "Trovita Island", itemName: "spike-shell-badge", badgeSpriteId: 68, animeEpisode: 109 },
-      { key: "orange-jade-star", title: "Jade Star Badge", city: "Kumquat Island", itemName: "jade-star-badge", badgeSpriteId: 69, animeEpisode: 112 },
+      { key: "orange-coral-eye", title: "Coral-Eye Badge", city: "Mikan Island", itemName: "coral-eye-badge", badgeSpriteId: 66, unlockTarget: { season: 2, episode: 34 } },
+      { key: "orange-sea-ruby", title: "Sea Ruby Badge", city: "Navel Island", itemName: "sea-ruby-badge", badgeSpriteId: 67, unlockTarget: { season: 2, episode: 48 } },
+      { key: "orange-spike-shell", title: "Spike Shell Badge", city: "Trovita Island", itemName: "spike-shell-badge", badgeSpriteId: 68, unlockTarget: { season: 2, episode: 57 } },
+      { key: "orange-jade-star", title: "Jade Star Badge", city: "Kumquat Island", itemName: "jade-star-badge", badgeSpriteId: 69, unlockTarget: { season: 2, episode: 60 } },
     ],
   },
   {
@@ -93,14 +97,14 @@ const ASH_BADGE_SEASON_CARDS: BadgeSeasonCard[] = [
     title: "Johto",
     subtitle: "Badge Johto in ordine anime.",
     badges: [
-      { key: "zephyr", title: "Medaglia Zefiro", city: "Violet City", itemName: "zephyr-badge", badgeSpriteId: 9, animeEpisode: 132 },
-      { key: "hive", title: "Medaglia Alveare", city: "Azalea Town", itemName: "hive-badge", badgeSpriteId: 10, animeEpisode: 143 },
-      { key: "plain", title: "Medaglia Piana", city: "Goldenrod City", itemName: "plain-badge", badgeSpriteId: 11, animeEpisode: 163 },
-      { key: "fog", title: "Medaglia Nebbia", city: "Ecruteak City", itemName: "fog-badge", badgeSpriteId: 12, animeEpisode: 185 },
-      { key: "storm", title: "Medaglia Tempesta", city: "Cianwood City", itemName: "storm-badge", badgeSpriteId: 13, animeEpisode: 209 },
-      { key: "mineral", title: "Medaglia Minerale", city: "Olivine City", itemName: "mineral-badge", badgeSpriteId: 14, animeEpisode: 226 },
-      { key: "glacier", title: "Medaglia Ghiacciaio", city: "Mahogany Town", itemName: "glacier-badge", badgeSpriteId: 15, animeEpisode: 238 },
-      { key: "rising", title: "Medaglia Dragone", city: "Blackthorn City", itemName: "rising-badge", badgeSpriteId: 16, animeEpisode: 255 },
+      { key: "zephyr", title: "Medaglia Zefiro", city: "Violet City", itemName: "zephyr-badge", badgeSpriteId: 9, unlockTarget: { season: 3, episode: 20 } },
+      { key: "hive", title: "Medaglia Alveare", city: "Azalea Town", itemName: "hive-badge", badgeSpriteId: 10, unlockTarget: { season: 3, episode: 31 } },
+      { key: "plain", title: "Medaglia Piana", city: "Goldenrod City", itemName: "plain-badge", badgeSpriteId: 11, unlockTarget: { season: 4, episode: 12 } },
+      { key: "fog", title: "Medaglia Nebbia", city: "Ecruteak City", itemName: "fog-badge", badgeSpriteId: 12, unlockTarget: { season: 4, episode: 34 } },
+      { key: "storm", title: "Medaglia Tempesta", city: "Cianwood City", itemName: "storm-badge", badgeSpriteId: 13, unlockTarget: { season: 5, episode: 6 } },
+      {key: "mineral", title: "Medaglia Minerale", city: "Olivine City", itemName: "mineral-badge", badgeSpriteId: 14, unlockTarget: { season: 5, episode: 23 }, unlockTarget: { season: 5, episode: 15 }},
+      { key: "glacier", title: "Medaglia Ghiacciaio", city: "Mahogany Town", itemName: "glacier-badge", badgeSpriteId: 15, unlockTarget: { season: 5, episode: 35 } },
+      { key: "rising", title: "Medaglia Dragone", city: "Blackthorn City", itemName: "rising-badge", badgeSpriteId: 16, unlockTarget: { season: 5, episode: 52 } },
     ],
   },
   {
@@ -108,14 +112,14 @@ const ASH_BADGE_SEASON_CARDS: BadgeSeasonCard[] = [
     title: "Hoenn",
     subtitle: "Badge Hoenn in ordine anime.",
     badges: [
-      { key: "stone", title: "Medaglia Pietra", city: "Rustboro City", itemName: "stone-badge", badgeSpriteId: 17, animeEpisode: 281 },
-      { key: "knuckle", title: "Medaglia Pugno", city: "Dewford Town", itemName: "knuckle-badge", badgeSpriteId: 18, animeEpisode: 292 },
-      { key: "dynamo", title: "Medaglia Dynamo", city: "Mauville City", itemName: "dynamo-badge", badgeSpriteId: 19, animeEpisode: 307 },
-      { key: "heat", title: "Medaglia Calore", city: "Lavaridge Town", itemName: "heat-badge", badgeSpriteId: 20, animeEpisode: 329 },
-      { key: "balance", title: "Medaglia Equilibrio", city: "Petalburg City", itemName: "balance-badge", badgeSpriteId: 21, animeEpisode: 343 },
-      { key: "feather", title: "Medaglia Piuma", city: "Fortree City", itemName: "feather-badge", badgeSpriteId: 22, animeEpisode: 350 },
-      { key: "mind", title: "Medaglia Mente", city: "Mossdeep City", itemName: "mind-badge", badgeSpriteId: 23, animeEpisode: 377 },
-      { key: "rain", title: "Medaglia Pioggia", city: "Sootopolis City", itemName: "rain-badge", badgeSpriteId: 24, animeEpisode: 389 },
+      { key: "stone", title: "Medaglia Pietra", city: "Rustboro City", itemName: "stone-badge", badgeSpriteId: 17, unlockTarget: { season: 6, episode: 14 } },
+      { key: "knuckle", title: "Medaglia Pugno", city: "Dewford Town", itemName: "knuckle-badge", badgeSpriteId: 18, unlockTarget: { season: 6, episode: 25 } },
+      { key: "dynamo", title: "Medaglia Dynamo", city: "Mauville City", itemName: "dynamo-badge", badgeSpriteId: 19, unlockTarget: { season: 6, episode: 40 } },
+      { key: "heat", title: "Medaglia Calore", city: "Lavaridge Town", itemName: "heat-badge", badgeSpriteId: 20, unlockTarget: { season: 7, episode: 22 } },
+      { key: "balance", title: "Medaglia Equilibrio", city: "Petalburg City", itemName: "balance-badge", badgeSpriteId: 21, unlockTarget: { season: 7, episode: 36 } },
+      { key: "feather", title: "Medaglia Piuma", city: "Fortree City", itemName: "feather-badge", badgeSpriteId: 22, unlockTarget: { season: 7, episode: 43 } },
+      { key: "mind", title: "Medaglia Mente", city: "Mossdeep City", itemName: "mind-badge", badgeSpriteId: 23, unlockTarget: { season: 8, episode: 18 } },
+      { key: "rain", title: "Medaglia Pioggia", city: "Sootopolis City", itemName: "rain-badge", badgeSpriteId: 24, unlockTarget: { season: 8, episode: 30 } },
     ],
   },
   {
@@ -123,14 +127,14 @@ const ASH_BADGE_SEASON_CARDS: BadgeSeasonCard[] = [
     title: "Sinnoh",
     subtitle: "Badge Sinnoh in ordine anime.",
     badges: [
-      { key: "coal", title: "Medaglia Carbone", city: "Oreburgh City", itemName: "coal-badge", badgeSpriteId: 25, animeEpisode: 406 },
-      { key: "forest", title: "Medaglia Foresta", city: "Eterna City", itemName: "forest-badge", badgeSpriteId: 26, animeEpisode: 440 },
-      { key: "cobble", title: "Medaglia Ciottolo", city: "Hearthome City", itemName: "cobble-badge", badgeSpriteId: 27, animeEpisode: 457 },
-      { key: "fen", title: "Medaglia Acquitrino", city: "Pastoria City", itemName: "fen-badge", badgeSpriteId: 28, animeEpisode: 473 },
-      { key: "relic", title: "Medaglia Reliquia", city: "Hearthome City", itemName: "relic-badge", badgeSpriteId: 29, animeEpisode: 497 },
-      { key: "mine", title: "Medaglia Miniera", city: "Canalave City", itemName: "mine-badge", badgeSpriteId: 30, animeEpisode: 507 },
-      { key: "icicle", title: "Medaglia Ghiacciolo", city: "Snowpoint City", itemName: "icicle-badge", badgeSpriteId: 31, animeEpisode: 522 },
-      { key: "beacon", title: "Medaglia Faro", city: "Sunyshore City", itemName: "beacon-badge", badgeSpriteId: 32, animeEpisode: 539 },
+      { key: "coal", title: "Medaglia Carbone", city: "Oreburgh City", itemName: "coal-badge", badgeSpriteId: 25, unlockTarget: { season: 8, episode: 47 } },
+      { key: "forest", title: "Medaglia Foresta", city: "Eterna City", itemName: "forest-badge", badgeSpriteId: 26, unlockTarget: { season: 9, episode: 28 } },
+      { key: "cobble", title: "Medaglia Ciottolo", city: "Hearthome City", itemName: "cobble-badge", badgeSpriteId: 27, unlockTarget: { season: 9, episode: 45 } },
+      { key: "fen", title: "Medaglia Acquitrino", city: "Pastoria City", itemName: "fen-badge", badgeSpriteId: 28, unlockTarget: { season: 10, episode: 14 } },
+      { key: "relic", title: "Medaglia Reliquia", city: "Hearthome City", itemName: "relic-badge", badgeSpriteId: 29, unlockTarget: { season: 10, episode: 38 } },
+      { key: "mine", title: "Medaglia Miniera", city: "Canalave City", itemName: "mine-badge", badgeSpriteId: 30, unlockTarget: { season: 10, episode: 48 } },
+      { key: "icicle", title: "Medaglia Ghiacciolo", city: "Snowpoint City", itemName: "icicle-badge", badgeSpriteId: 31, unlockTarget: { season: 11, episode: 11 } },
+      { key: "beacon", title: "Medaglia Faro", city: "Sunyshore City", itemName: "beacon-badge", badgeSpriteId: 32, unlockTarget: { season: 11, episode: 28 } },
     ],
   },
   {
@@ -138,14 +142,14 @@ const ASH_BADGE_SEASON_CARDS: BadgeSeasonCard[] = [
     title: "Unima",
     subtitle: "Badge Unima in ordine anime.",
     badges: [
-      { key: "trio", title: "Medaglia Trio", city: "Striaton City", itemName: "trio-badge", badgeSpriteId: 33, animeEpisode: 659 },
-      { key: "basic", title: "Medaglia Base", city: "Nacrene City", itemName: "basic-badge", badgeSpriteId: 34, animeEpisode: 670 },
-      { key: "insect", title: "Medaglia Scarabeo", city: "Castelia City", itemName: "insect-badge", badgeSpriteId: 36, animeEpisode: 683 },
-      { key: "bolt", title: "Medaglia Volt", city: "Nimbasa City", itemName: "bolt-badge", badgeSpriteId: 37, animeEpisode: 696 },
-      { key: "quake", title: "Medaglia Sisma", city: "Driftveil City", itemName: "quake-badge", badgeSpriteId: 38, animeEpisode: 726 },
-      { key: "jet", title: "Medaglia Jet", city: "Mistralton City", itemName: "jet-badge", badgeSpriteId: 39, animeEpisode: 738 },
-      { key: "legend", title: "Medaglia Stalattite", city: "Opelucid City", itemName: "legend-badge", badgeSpriteId: 40, animeEpisode: 754 },
-      { key: "wave", title: "Medaglia Arsenico", city: "Humilau City", itemName: "wave-badge", badgeSpriteId: 35, animeEpisode: 773 },
+      { key: "trio", title: "Medaglia Trio", city: "Striaton City", itemName: "trio-badge", badgeSpriteId: 33, unlockTarget: { season: 14, episode: 9 } },
+      { key: "basic", title: "Medaglia Base", city: "Nacrene City", itemName: "basic-badge", badgeSpriteId: 34, unlockTarget: { season: 14, episode: 20 } },
+      { key: "insect", title: "Medaglia Scarabeo", city: "Castelia City", itemName: "insect-badge", badgeSpriteId: 36, unlockTarget: { season: 14, episode: 33 } },
+      { key: "bolt", title: "Medaglia Volt", city: "Nimbasa City", itemName: "bolt-badge", badgeSpriteId: 37, unlockTarget: { season: 14, episode: 46 } },
+      { key: "quake", title: "Medaglia Sisma", city: "Driftveil City", itemName: "quake-badge", badgeSpriteId: 38, unlockTarget: { season: 15, episode: 28 } },
+      { key: "jet", title: "Medaglia Jet", city: "Mistralton City", itemName: "jet-badge", badgeSpriteId: 39, unlockTarget: { season: 15, episode: 40 } },
+      { key: "legend", title: "Medaglia Stalattite", city: "Opelucid City", itemName: "legend-badge", badgeSpriteId: 40, unlockTarget: { season: 16, episode: 7 } },
+      { key: "wave", title: "Medaglia Arsenico", city: "Humilau City", itemName: "wave-badge", badgeSpriteId: 35, unlockTarget: { season: 16, episode: 26 } },
     ],
   },
   {
@@ -153,14 +157,14 @@ const ASH_BADGE_SEASON_CARDS: BadgeSeasonCard[] = [
     title: "Kalos",
     subtitle: "Badge Kalos in ordine anime.",
     badges: [
-      { key: "bug", title: "Medaglia Coleottero", city: "Santalune City", itemName: "bug-badge", badgeSpriteId: 43, animeEpisode: 806 },
-      { key: "cliff", title: "Medaglia Rupe", city: "Cyllage City", itemName: "cliff-badge", badgeSpriteId: 44, animeEpisode: 823 },
-      { key: "rumble", title: "Medaglia Rissa", city: "Shalour City", itemName: "rumble-badge", badgeSpriteId: 45, animeEpisode: 836 },
-      { key: "plant", title: "Medaglia Pianta", city: "Coumarine City", itemName: "plant-badge", badgeSpriteId: 46, animeEpisode: 849 },
-      { key: "voltage", title: "Medaglia Tensione", city: "Lumiose City", itemName: "voltage-badge", badgeSpriteId: 47, animeEpisode: 861 },
-      { key: "fairy", title: "Medaglia Folletto", city: "Laverre City", itemName: "fairy-badge", badgeSpriteId: 48, animeEpisode: 873 },
-      { key: "psychic", title: "Medaglia Psiche", city: "Anistar City", itemName: "psychic-badge", badgeSpriteId: 49, animeEpisode: 885 },
-      { key: "iceberg", title: "Medaglia Iceberg", city: "Snowbelle City", itemName: "iceberg-badge", badgeSpriteId: 50, animeEpisode: 891 },
+      { key: "bug", title: "Medaglia Coleottero", city: "Santalune City", itemName: "bug-badge", badgeSpriteId: 43, unlockTarget: { season: 17, episode: 14 } },
+      { key: "cliff", title: "Medaglia Rupe", city: "Cyllage City", itemName: "cliff-badge", badgeSpriteId: 44, unlockTarget: { season: 17, episode: 31 } },
+      { key: "rumble", title: "Medaglia Rissa", city: "Shalour City", itemName: "rumble-badge", badgeSpriteId: 45, unlockTarget: { season: 17, episode: 44 } },
+      { key: "plant", title: "Medaglia Pianta", city: "Coumarine City", itemName: "plant-badge", badgeSpriteId: 46, unlockTarget: { season: 18, episode: 9 } },
+      { key: "voltage", title: "Medaglia Tensione", city: "Lumiose City", itemName: "voltage-badge", badgeSpriteId: 47, unlockTarget: { season: 18, episode: 21 } },
+      { key: "fairy", title: "Medaglia Folletto", city: "Laverre City", itemName: "fairy-badge", badgeSpriteId: 48, unlockTarget: { season: 18, episode: 33 } },
+      { key: "psychic", title: "Medaglia Psiche", city: "Anistar City", itemName: "psychic-badge", badgeSpriteId: 49, unlockTarget: { season: 18, episode: 45 } },
+      { key: "iceberg", title: "Medaglia Iceberg", city: "Snowbelle City", itemName: "iceberg-badge", badgeSpriteId: 50, unlockTarget: { season: 19, episode: 6 } },
     ],
   },
   {
@@ -168,12 +172,12 @@ const ASH_BADGE_SEASON_CARDS: BadgeSeasonCard[] = [
     title: "Alola",
     subtitle: "Isola Challenge (anime).",
     badges: [
-      { key: "alola-normalium", title: "Normalium Z", city: "Melemele Island", itemName: "normalium-z--held", animeEpisode: 952 },
-      { key: "alola-electrium", title: "Electrium Z", city: "Akala Island", itemName: "electrium-z--held", animeEpisode: 986 },
-      { key: "alola-grassium", title: "Grassium Z", city: "Akala Island", itemName: "grassium-z--held", animeEpisode: 1005 },
-      { key: "alola-rockium", title: "Rockium Z", city: "Ula'ula Island", itemName: "rockium-z--held", animeEpisode: 1039 },
-      { key: "alola-lycanium", title: "Lycanium Z", city: "Ula'ula Island", itemName: "lycanium-z--held", animeEpisode: 1064 },
-      { key: "alola-steelium", title: "Steelium Z", city: "Poni Island", itemName: "steelium-z--held", animeEpisode: 1089 },
+      { key: "alola-normalium", title: "Normalium Z", city: "Melemele Island", itemName: "normalium-z--held", unlockTarget: { season: 20, episode: 19 } },
+      { key: "alola-electrium", title: "Electrium Z", city: "Akala Island", itemName: "electrium-z--held", unlockTarget: { season: 21, episode: 10 } },
+      { key: "alola-grassium", title: "Grassium Z", city: "Akala Island", itemName: "grassium-z--held", unlockTarget: { season: 21, episode: 29 } },
+      { key: "alola-rockium", title: "Rockium Z", city: "Ula'ula Island", itemName: "rockium-z--held", unlockTarget: { season: 22, episode: 15 } },
+      { key: "alola-lycanium", title: "Lycanium Z", city: "Ula'ula Island", itemName: "lycanium-z--held", unlockTarget: { season: 22, episode: 40 } },
+      { key: "alola-steelium", title: "Steelium Z", city: "Poni Island", itemName: "steelium-z--held", unlockTarget: { season: 23, episode: 11 } },
     ],
   },
 ];
@@ -353,6 +357,30 @@ function getPokeApiBadgeSpriteUrl(badgeId: number) {
 function getBadgeImageUrl(badge: AshBadgeMilestone) {
   if (badge.badgeSpriteId) return getPokeApiBadgeSpriteUrl(badge.badgeSpriteId);
   return getPokeApiItemSpriteUrl(badge.itemName);
+}
+
+function getSeasonEpisodeForAnimeEpisode(animeEpisode: number): { season: number; episode: number } | null {
+  if (!Number.isInteger(animeEpisode) || animeEpisode <= 0) return null;
+
+  const seasonsOrdered = [...allSeasons].sort((a, b) => a.season - b.season);
+  let offset = 0;
+
+  for (const season of seasonsOrdered) {
+    const seasonEpisodes = getEpisodesForSeason(season).length;
+    const seasonStart = offset + 1;
+    const seasonEnd = offset + seasonEpisodes;
+
+    if (animeEpisode >= seasonStart && animeEpisode <= seasonEnd) {
+      return {
+        season: season.season,
+        episode: animeEpisode - offset,
+      };
+    }
+
+    offset = seasonEnd;
+  }
+
+  return null;
 }
 
 const getSeasonImageCandidates = (seasonNumber: number) => [
@@ -1409,12 +1437,27 @@ export default function ProfilePage({
   const badgeSeasonCards = useMemo(
     () =>
       ASH_BADGE_SEASON_CARDS.map((card) => {
-        const badges = card.badges.map((badge) => ({
-          ...badge,
-          imageUrl: getBadgeImageUrl(badge),
-          unlocked: watchedStats.episodesWatched >= badge.animeEpisode,
-          description: `Sblocco episodio anime ${badge.animeEpisode}.`,
-        }));
+        const badges = card.badges.map((badge) => {
+          const resolvedTarget =
+            badge.unlockTarget ??
+            (typeof badge.animeEpisode === "number" ? getSeasonEpisodeForAnimeEpisode(badge.animeEpisode) : null);
+          const unlockedByTarget = resolvedTarget
+            ? Boolean(watchedBySeason[resolvedTarget.season]?.[resolvedTarget.episode])
+            : null;
+
+          return {
+            ...badge,
+            imageUrl: getBadgeImageUrl(badge),
+            unlocked:
+              unlockedByTarget ??
+              (typeof badge.animeEpisode === "number" ? watchedStats.episodesWatched >= badge.animeEpisode : false),
+            description: resolvedTarget
+              ? `Sblocco stagione ${resolvedTarget.season} episodio ${resolvedTarget.episode}.`
+              : typeof badge.animeEpisode === "number"
+                ? `Sblocco episodio anime ${badge.animeEpisode}.`
+                : "Sblocco non disponibile.",
+          };
+        });
 
         const unlockedCount = badges.filter((badge) => badge.unlocked).length;
 
@@ -1426,7 +1469,7 @@ export default function ProfilePage({
           progressPercent: badges.length > 0 ? (unlockedCount / badges.length) * 100 : 0,
         };
       }),
-    [watchedStats.episodesWatched]
+    [watchedBySeason, watchedStats.episodesWatched]
   );
 
   const unlockedBadgesCount = badgeSeasonCards.reduce((sum, card) => sum + card.unlockedCount, 0);
@@ -2431,8 +2474,7 @@ export default function ProfilePage({
               </article>
 
               <article className="rounded-md border border-white/10 bg-[#181818] p-5 sm:p-6">
-                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-white">Stagioni medaglie (PokéAPI)</p>
-                <p className="mt-1 text-xs text-slate-300">Tutte le medaglie in ordine, visibili in griglia.</p>
+                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-white">Stagioni medaglie</p>
                 <div className="mt-3 h-px w-full bg-linear-to-r from-transparent via-white/20 to-transparent" />
 
                 <div className="mt-4 grid grid-cols-1 gap-2 lg:grid-cols-2">

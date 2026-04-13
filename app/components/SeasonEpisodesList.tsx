@@ -193,6 +193,7 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
   const [watchedByEpisode, setWatchedByEpisode] = useState<Record<number, boolean>>({});
   const [communityByEpisode, setCommunityByEpisode] = useState<Record<number, CommunityEpisodeStats>>({});
   const [openEpisodeNumber, setOpenEpisodeNumber] = useState<number | null>(null);
+  const [openEpisodeMenuNumber, setOpenEpisodeMenuNumber] = useState<number | null>(null);
   const isFillerLoadedRef = useRef(false);
   const canPersistWatchedRef = useRef(false);
 
@@ -380,6 +381,11 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
     }
   };
 
+  const unmarkEpisodeAsWatched = (episodeNumber: number) => {
+    setWatchedByEpisode((prev) => ({ ...prev, [episodeNumber]: false }));
+    setOpenEpisodeMenuNumber(null);
+  };
+
   return (
     <div className="space-y-3">
       <div className="space-y-2 rounded-lg border border-white/10 bg-zinc-900/60 p-3">
@@ -459,7 +465,34 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
               <div className="min-w-0 flex-1 space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="text-base font-bold sm:text-lg">{episode.title}</h3>
-                  <span className="text-xs text-white/60">{episode.duration}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-white/60">{episode.duration}</span>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setOpenEpisodeMenuNumber((prev) => (prev === episode.number ? null : episode.number))
+                        }
+                        className="rounded border border-white/20 bg-white/5 px-2 py-1 text-sm leading-none text-white/80 transition hover:bg-white/10"
+                        aria-label="Azioni episodio"
+                      >
+                        ⋯
+                      </button>
+
+                      {openEpisodeMenuNumber === episode.number ? (
+                        <div className="absolute right-0 top-full z-10 mt-1 w-44 rounded border border-white/15 bg-zinc-900 p-1.5 shadow-xl">
+                          <button
+                            type="button"
+                            onClick={() => unmarkEpisodeAsWatched(episode.number)}
+                            disabled={!isWatched}
+                            className="w-full rounded px-2 py-1.5 text-left text-xs text-white/85 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-45"
+                          >
+                            Togli da guardato
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
 
                 <p className="text-sm text-white/70">{episode.synopsis}</p>
