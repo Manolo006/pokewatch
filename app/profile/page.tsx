@@ -491,6 +491,9 @@ export default function ProfilePage({
     if (typeof window === "undefined") return {};
     return parseStoredWatchedBySeason(window.localStorage);
   });
+  const [durationSecondsBySeasonEpisode, setDurationSecondsBySeasonEpisode] = useState<
+    Record<number, Record<number, number>>
+  >({});
   const [fillerBySeason, setFillerBySeason] = useState<Record<number, Record<number, EpisodeFillerType>>>(() => {
     if (typeof window === "undefined") return {};
     return parseStoredFillerBySeason(window.localStorage);
@@ -1295,6 +1298,32 @@ export default function ProfilePage({
     };
   }, [db, user?.uid, viewedUserId]);
 
+  useEffect(() => {
+    let active = true;
+
+    const loadDurationSeconds = async () => {
+      try {
+        const response = await fetch("/api/watched-durations");
+        if (!response.ok) return;
+
+        const data = (await response.json()) as {
+          durationsBySeason?: Record<number, Record<number, number>>;
+        };
+
+        if (!active || !data?.durationsBySeason) return;
+        setDurationSecondsBySeasonEpisode(data.durationsBySeason);
+      } catch {
+        // ignore and keep fallback duration
+      }
+    };
+
+    void loadDurationSeconds();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const watchedTotals = useMemo(() => {
     const totals = {
       filler: 0,
@@ -1327,22 +1356,42 @@ export default function ProfilePage({
 
   const watchedStats = useMemo(() => {
     let episodesWatched = 0;
+    let totalSeconds = 0;
 
-    Object.values(watchedBySeason).forEach((seasonEpisodes) => {
-      const watchedInSeason = Object.values(seasonEpisodes).filter(Boolean).length;
-      episodesWatched += watchedInSeason;
+    Object.entries(watchedBySeason).forEach(([seasonKey, seasonEpisodes]) => {
+      const seasonNumber = Number(seasonKey);
+      const secondsByEpisode = durationSecondsBySeasonEpisode[seasonNumber] ?? {};
+
+      Object.entries(seasonEpisodes).forEach(([episodeKey, watched]) => {
+        if (!watched) return;
+
+        const episodeNumber = Number(episodeKey);
+        if (!Number.isInteger(episodeNumber)) return;
+
+        episodesWatched += 1;
+        totalSeconds += secondsByEpisode[episodeNumber] ?? 23 * 60;
+      });
     });
 
-    const totalMinutes = episodesWatched * 23;
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    const formattedTime = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+    const weeks = Math.floor(totalSeconds / (7 * 24 * 60 * 60));
+    const days = Math.floor((totalSeconds % (7 * 24 * 60 * 60)) / (24 * 60 * 60));
+    const hours = Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60));
+    const minutes = Math.floor((totalSeconds % (60 * 60)) / 60);
+    const seconds = totalSeconds % 60;
+
+    const formattedTime = [
+      ...(weeks > 0 ? [`${weeks}w`] : []),
+      ...(weeks > 0 || days > 0 ? [`${days}d`] : []),
+      `${hours}h`,
+      `${minutes}m`,
+      `${seconds}s`,
+    ].join(" ");
 
     return {
       episodesWatched,
       formattedTime,
     };
-  }, [watchedBySeason]);
+  }, [durationSecondsBySeasonEpisode, watchedBySeason]);
 
   const overviewItems = [
     { label: "Filler", entries: watchedTotals.filler, color: "bg-rose-500", textColor: "text-rose-300" },

@@ -59,13 +59,52 @@ const parseIsoDurationToLabel = (isoDuration?: string) => {
   const seconds = Number(match[3] ?? 0);
 
   if (hours > 0) {
+    if (minutes > 0 && seconds > 0) return `${hours} h ${minutes} min ${seconds} sec`;
     if (minutes > 0) return `${hours} h ${minutes} min`;
-    return `${hours} h`;
+    if (seconds > 0) return `${hours} h ${seconds} sec`;
+    return `${hours} h 0 min`;
   }
 
   if (minutes > 0 && seconds > 0) return `${minutes} min ${seconds} sec`;
   if (minutes > 0) return `${minutes} min`;
   if (seconds > 0) return `${seconds} sec`;
+
+  return undefined;
+};
+
+const parseClockDurationToLabel = (clockDuration?: string) => {
+  if (!clockDuration) return undefined;
+
+  const parts = clockDuration
+    .trim()
+    .split(":")
+    .map((part) => Number(part));
+
+  if (parts.some((part) => Number.isNaN(part))) return undefined;
+
+  if (parts.length === 3) {
+    const [hours, minutes, seconds] = parts;
+    if (hours > 0 && minutes > 0 && seconds > 0) return `${hours} h ${minutes} min ${seconds} sec`;
+    if (hours > 0 && minutes > 0) return `${hours} h ${minutes} min`;
+    if (hours > 0 && seconds > 0) return `${hours} h ${seconds} sec`;
+    if (hours > 0) return `${hours} h 0 min`;
+    if (minutes > 0 && seconds > 0) return `${minutes} min ${seconds} sec`;
+    if (minutes > 0) return `${minutes} min`;
+    if (seconds > 0) return `${seconds} sec`;
+    return undefined;
+  }
+
+  if (parts.length === 2) {
+    const [minutes, seconds] = parts;
+    if (minutes > 0 && seconds > 0) return `${minutes} min ${seconds} sec`;
+    if (minutes > 0) return `${minutes} min`;
+    if (seconds > 0) return `${seconds} sec`;
+    return undefined;
+  }
+
+  if (parts.length === 1 && parts[0] > 0) {
+    return `${parts[0]} sec`;
+  }
 
   return undefined;
 };
@@ -202,6 +241,21 @@ export async function getYouTubePlaylistVideos(
   }
 
   const html = await response.text();
+  const durationByVideoId = new Map<string, string>();
+  const durationRegex =
+    /"videoId":"([a-zA-Z0-9_-]{11})"[\s\S]*?"lengthText":\{[\s\S]*?"simpleText":"([0-9:]+)"\}/g;
+
+  let durationMatch: RegExpExecArray | null;
+  while ((durationMatch = durationRegex.exec(html)) !== null) {
+    const videoId = durationMatch[1];
+    const rawClockDuration = durationMatch[2];
+    const durationLabel = parseClockDurationToLabel(rawClockDuration);
+
+    if (durationLabel && !durationByVideoId.has(videoId)) {
+      durationByVideoId.set(videoId, durationLabel);
+    }
+  }
+
   const regex =
     /"playlistVideoRenderer":\{"videoId":"([a-zA-Z0-9_-]{11})"[\s\S]*?"title":\{(?:"runs":\[\{"text":"([^"]*)"\}\]|"simpleText":"([^"]*)")/g;
 
@@ -221,6 +275,7 @@ export async function getYouTubePlaylistVideos(
       title: decodeYouTubeText(rawTitle),
       thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
       youtubeUrl: `https://www.youtube.com/watch?v=${videoId}`,
+      duration: durationByVideoId.get(videoId),
     });
   }
 
