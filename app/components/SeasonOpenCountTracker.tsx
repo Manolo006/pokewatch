@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { ref, runTransaction } from "firebase/database";
+import { increment, ref, remove, runTransaction, update } from "firebase/database";
 import { db } from "@/app/lib/firebase";
 import { useAuth } from "@/app/components/AuthProvider";
 
@@ -19,12 +19,12 @@ export default function SeasonOpenCountTracker({ seasonNumber }: SeasonOpenCount
     let isActive = true;
 
     const incrementCommunityOpenCount = async () => {
-      const result = await runTransaction(ref(database, `community/SeasonOpenCount/${seasonNumber}`), (current) => {
-        const count = Number(current);
-        return Number.isFinite(count) && count >= 0 ? count + 1 : 1;
+      await update(ref(database), {
+        [`community/SeasonOpenCount/${seasonNumber}`]: increment(1),
+        [`SeasonOpenCount/${seasonNumber}`]: increment(1),
       });
 
-      return result.committed;
+      return true;
     };
 
     const trackOpenOnce = async () => {
@@ -41,7 +41,12 @@ export default function SeasonOpenCountTracker({ seasonNumber }: SeasonOpenCount
           });
 
           if (markerResult.committed && isActive) {
-            await incrementCommunityOpenCount();
+            try {
+              await incrementCommunityOpenCount();
+            } catch {
+              // Rollback marker: allow retry al prossimo accesso se incremento community fallisce
+              await remove(userSeasonMarkerRef);
+            }
           }
           return;
         } catch {

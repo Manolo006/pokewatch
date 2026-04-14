@@ -19,7 +19,7 @@ import {
   type User,
 } from "firebase/auth";
 import { FirebaseError } from "firebase/app";
-import { ref, update } from "firebase/database";
+import { get, ref, update } from "firebase/database";
 import { auth, db, googleProvider, isFirebaseConfigured } from "@/app/lib/firebase";
 
 function getUserSlug(email?: string | null) {
@@ -31,6 +31,15 @@ function getDisplayName(user: User) {
   const fromEmail = user.email?.split("@")[0];
   return fromEmail ? fromEmail.charAt(0).toUpperCase() + fromEmail.slice(1) : "Allenatore PokéWatch";
 }
+
+type StoredPublicProfile = {
+  username?: string;
+  displayName?: string;
+  joinedAt?: string | null;
+  bio?: string;
+  profileImageUrl?: string | null;
+  profileImageBgColor?: string | null;
+};
 
 type AuthContextValue = {
   user: User | null;
@@ -58,22 +67,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
 
       if (nextUser && db) {
-        const username = getUserSlug(nextUser.email);
-        const displayName = getDisplayName(nextUser);
-        const joinedAt = nextUser.metadata.creationTime ?? null;
+        void (async () => {
+          const userPublicProfileRef = ref(db, `users/${nextUser.uid}/publicProfile`);
+          const snapshot = await get(userPublicProfileRef);
+          const stored = (snapshot.val() as StoredPublicProfile | null) ?? null;
 
-        void update(ref(db, `publicProfiles/${username}`), {
-          uid: nextUser.uid,
-          username,
-          displayName,
-          joinedAt,
-        });
+          const username = stored?.username?.trim() || getUserSlug(nextUser.email);
+          const displayName = stored?.displayName?.trim() || getDisplayName(nextUser);
+          const joinedAt = stored?.joinedAt ?? nextUser.metadata.creationTime ?? null;
+          const bio = stored?.bio ?? "";
+          const profileImageUrl = stored?.profileImageUrl ?? null;
+          const profileImageBgColor = stored?.profileImageBgColor ?? "#e50914";
 
-        void update(ref(db, `users/${nextUser.uid}/publicProfile`), {
-          username,
-          displayName,
-          joinedAt,
-        });
+          await update(userPublicProfileRef, {
+            username,
+            displayName,
+            joinedAt,
+            bio,
+            profileImageUrl,
+            profileImageBgColor,
+          });
+
+          await update(ref(db, `publicProfiles/${username}`), {
+            uid: nextUser.uid,
+            username,
+            displayName,
+            joinedAt,
+            bio,
+            profileImageUrl,
+            profileImageBgColor,
+          });
+        })();
       }
     });
 
