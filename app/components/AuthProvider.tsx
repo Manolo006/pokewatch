@@ -19,7 +19,7 @@ import {
   type User,
 } from "firebase/auth";
 import { FirebaseError } from "firebase/app";
-import { set, ref } from "firebase/database";
+import { ref, update } from "firebase/database";
 import { auth, db, googleProvider, isFirebaseConfigured } from "@/app/lib/firebase";
 
 function getUserSlug(email?: string | null) {
@@ -62,14 +62,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const displayName = getDisplayName(nextUser);
         const joinedAt = nextUser.metadata.creationTime ?? null;
 
-        void set(ref(db, `publicProfiles/${username}`), {
+        void update(ref(db, `publicProfiles/${username}`), {
           uid: nextUser.uid,
           username,
           displayName,
           joinedAt,
         });
 
-        void set(ref(db, `users/${nextUser.uid}/publicProfile`), {
+        void update(ref(db, `users/${nextUser.uid}/publicProfile`), {
           username,
           displayName,
           joinedAt,
