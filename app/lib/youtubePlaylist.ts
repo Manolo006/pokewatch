@@ -8,6 +8,17 @@ export type YouTubePlaylistVideo = {
 
 const PLAYLIST_ID_REGEX = /[?&]list=([a-zA-Z0-9_-]+)/;
 
+const DEFAULT_YOUTUBE_LANGUAGE = process.env.NEXT_PUBLIC_EPISODE_TITLE_LANG_DEFAULT || "it";
+
+const normalizeYouTubeLanguage = (value?: string) => {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized) return DEFAULT_YOUTUBE_LANGUAGE;
+  if (!/^[a-z]{2}(?:-[a-z]{2})?$/.test(normalized)) return DEFAULT_YOUTUBE_LANGUAGE;
+  return normalized;
+};
+
+export const getDefaultYouTubeLanguage = () => normalizeYouTubeLanguage(DEFAULT_YOUTUBE_LANGUAGE);
+
 type YouTubePlaylistItemsApiResponse = {
   nextPageToken?: string;
   items?: Array<{
@@ -28,6 +39,12 @@ type YouTubePlaylistItemsApiResponse = {
 type YouTubeVideosApiResponse = {
   items?: Array<{
     id?: string;
+    snippet?: {
+      title?: string;
+      localized?: {
+        title?: string;
+      };
+    };
     contentDetails?: {
       duration?: string;
     };
@@ -120,7 +137,8 @@ const chunk = <T>(items: T[], size: number) => {
 async function getPlaylistVideosViaApi(
   playlistId: string,
   maxItems: number,
-  apiKey: string
+  apiKey: string,
+  language: string
 ): Promise<YouTubePlaylistVideo[]> {
   const playlistVideos: YouTubePlaylistVideo[] = [];
   let nextPageToken: string | undefined;
@@ -131,6 +149,7 @@ async function getPlaylistVideosViaApi(
       playlistId,
       maxResults: String(Math.min(50, maxItems - playlistVideos.length)),
       key: apiKey,
+      hl: language,
     });
 
     if (nextPageToken) {
@@ -175,6 +194,7 @@ async function getPlaylistVideosViaApi(
   if (playlistVideos.length === 0) return playlistVideos;
 
   const durationMap = new Map<string, string>();
+  const localizedTitleMap = new Map<string, string>();
   const videoIdChunks = chunk(
     [...new Set(playlistVideos.map((video) => video.videoId))],
     50
@@ -182,9 +202,10 @@ async function getPlaylistVideosViaApi(
 
   for (const ids of videoIdChunks) {
     const params = new URLSearchParams({
-      part: "contentDetails",
+      part: "snippet,contentDetails",
       id: ids.join(","),
       key: apiKey,
+      hl: language,
     });
 
     const response = await fetch(`https://www.googleapis.com/youtube/v3/videos?${params.toString()}`, {
@@ -198,6 +219,11 @@ async function getPlaylistVideosViaApi(
       const id = item.id;
       if (!id) continue;
 
+      const localizedTitle = item.snippet?.localized?.title?.trim() || item.snippet?.title?.trim();
+      if (localizedTitle) {
+        localizedTitleMap.set(id, localizedTitle);
+      }
+
       const duration = parseIsoDurationToLabel(item.contentDetails?.duration);
       if (duration) {
         durationMap.set(id, duration);
@@ -207,22 +233,25 @@ async function getPlaylistVideosViaApi(
 
   return playlistVideos.map((video) => ({
     ...video,
+    title: localizedTitleMap.get(video.videoId) || video.title,
     duration: durationMap.get(video.videoId),
   }));
 }
 
 export async function getYouTubePlaylistVideos(
   playlistUrl: string,
-  maxItems = 50
+  maxItems = 50,
+  preferredLanguage?: string
 ): Promise<YouTubePlaylistVideo[]> {
   const playlistId = extractPlaylistId(playlistUrl);
+  const language = normalizeYouTubeLanguage(preferredLanguage);
 
   if (!playlistId) return [];
 
   const apiKey = process.env.YOUTUBE_API_KEY;
 
   if (apiKey) {
-    const apiVideos = await getPlaylistVideosViaApi(playlistId, maxItems, apiKey);
+    const apiVideos = await getPlaylistVideosViaApi(playlistId, maxItems, apiKey, language);
     if (apiVideos.length > 0) {
       return apiVideos;
     }
@@ -233,6 +262,7 @@ export async function getYouTubePlaylistVideos(
     headers: {
       "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      "Accept-Language": `${language},${language.split("-")[0]};q=0.9,en;q=0.7`,
     },
   });
 

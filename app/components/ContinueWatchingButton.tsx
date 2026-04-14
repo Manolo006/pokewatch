@@ -7,6 +7,8 @@ import { ref, get } from "firebase/database";
 import { useAuth } from "@/app/components/AuthProvider";
 import { db } from "@/app/lib/firebase";
 import { allSeasons, getEpisodesForSeason, getSeasonByNumber } from "@/app/data/pokemonCatalog";
+import { getUIText } from "@/app/lib/uiLanguage";
+import { useUILanguage } from "@/app/lib/useUILanguage";
 
 type LastWatchedPayload = {
   seasonNumber: number;
@@ -172,6 +174,7 @@ const getNextEpisodeTarget = (lastWatched: LastWatchedPayload): NextEpisodeTarge
 
 export default function ContinueWatchingButton() {
   const { user } = useAuth();
+  const language = useUILanguage();
   const [lastWatched, setLastWatched] = useState<LastWatchedPayload | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -229,7 +232,7 @@ export default function ContinueWatchingButton() {
     >
       <IoPlay className="text-base" aria-hidden="true" />
       <span>
-        Continua S{nextTarget.seasonNumber} · E{nextTarget.episodeNumber}
+        {getUIText("continueShort", language)} S{nextTarget.seasonNumber} · E{nextTarget.episodeNumber}
       </span>
     </Link>
   );

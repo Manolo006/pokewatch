@@ -4,7 +4,6 @@ import { GoDotFill } from "react-icons/go";
 import { IoArrowBack, IoChevronBack, IoChevronForward } from "react-icons/io5";
 import {
   allSeasons,
-  episodesLabel,
   getEpisodesForSeason,
   getSeasonByNumber,
 } from "@/app/data/pokemonCatalog";
@@ -12,6 +11,8 @@ import { getSeasonPlaylistUrl } from "@/app/data/seasonPlaylists";
 import SeasonHeroThumbnail from "@/app/components/SeasonHeroThumbnail";
 import SeasonEpisodesList from "@/app/components/SeasonEpisodesList";
 import SeasonOpenCountTracker from "@/app/components/SeasonOpenCountTracker";
+import LanguageText from "@/app/components/LanguageText";
+import LanguageEpisodesLabel from "@/app/components/LanguageEpisodesLabel";
 import { getYouTubePlaylistVideos } from "@/app/lib/youtubePlaylist";
 
 type SeasonPageProps = {
@@ -51,23 +52,32 @@ export default async function SeasonPage({ params }: SeasonPageProps) {
   const fallbackEpisodes = getEpisodesForSeason(selectedSeason);
 
   const playlistUrl = getSeasonPlaylistUrl(selectedSeason.season);
-  const youtubeVideos = playlistUrl ? await getYouTubePlaylistVideos(playlistUrl, fallbackEpisodes.length) : [];
+  const [youtubeVideosIt, youtubeVideosEn] = playlistUrl
+    ? await Promise.all([
+        getYouTubePlaylistVideos(playlistUrl, fallbackEpisodes.length, "it"),
+        getYouTubePlaylistVideos(playlistUrl, fallbackEpisodes.length, "en"),
+      ])
+    : [[], []];
 
-  const episodes = fallbackEpisodes.map((episode, index) => {
-    const youtubeVideo = youtubeVideos[index];
+  const mergeEpisodesWithVideos = (videos: Awaited<ReturnType<typeof getYouTubePlaylistVideos>>) =>
+    fallbackEpisodes.map((episode, index) => {
+      const youtubeVideo = videos[index];
 
-    if (!youtubeVideo) {
-      return episode;
-    }
+      if (!youtubeVideo) {
+        return episode;
+      }
 
-    return {
-      ...episode,
-      title: youtubeVideo.title || episode.title,
-      duration: youtubeVideo.duration || episode.duration,
-      thumbnailUrl: youtubeVideo.thumbnailUrl,
-      youtubeUrl: youtubeVideo.youtubeUrl,
-    };
-  });
+      return {
+        ...episode,
+        title: youtubeVideo.title || episode.title,
+        duration: youtubeVideo.duration || episode.duration,
+        thumbnailUrl: youtubeVideo.thumbnailUrl,
+        youtubeUrl: youtubeVideo.youtubeUrl,
+      };
+    });
+
+  const episodesIt = mergeEpisodesWithVideos(youtubeVideosIt);
+  const episodesEn = mergeEpisodesWithVideos(youtubeVideosEn);
 
   return (
     <div className="min-h-screen bg-[#141414] text-white">
@@ -80,7 +90,7 @@ export default async function SeasonPage({ params }: SeasonPageProps) {
             className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-2 text-sm font-semibold transition hover:bg-white/20"
           >
             <IoArrowBack aria-hidden="true" />
-            Torna alla home
+            <LanguageText textKey="backHome" />
           </Link>
         </div>
       </header>
@@ -95,18 +105,18 @@ export default async function SeasonPage({ params }: SeasonPageProps) {
           />
 
           <div className="space-y-4 p-6 sm:p-8">
-            <p className="text-xs font-bold tracking-[0.2em] text-white/70">DETTAGLIO STAGIONE</p>
+            <p className="text-xs font-bold tracking-[0.2em] text-white/70"><LanguageText textKey="seasonDetail" /></p>
             <h1 className="text-3xl font-black leading-tight sm:text-4xl">{selectedSeason.title}</h1>
             <p className="text-sm text-white/75 sm:text-base">{selectedSeason.synopsis}</p>
 
             <p className="flex flex-wrap items-center gap-1 text-xs text-white/70 sm:text-sm">
-              <span>Stagione {selectedSeason.season}</span>
+              <span><LanguageText textKey="seasonLabel" /> {selectedSeason.season}</span>
               <GoDotFill className="text-[10px]" aria-hidden="true" />
               <span>{selectedSeason.arc}</span>
               <GoDotFill className="text-[10px]" aria-hidden="true" />
               <span>{selectedSeason.years}</span>
               <GoDotFill className="text-[10px]" aria-hidden="true" />
-              <span>{episodesLabel(selectedSeason.episodes)}</span>
+              <span><LanguageEpisodesLabel episodes={selectedSeason.episodes} /></span>
             </p>
 
             <div className="flex flex-wrap gap-3 pt-2">
@@ -116,7 +126,7 @@ export default async function SeasonPage({ params }: SeasonPageProps) {
                 aria-label={`Vai alla stagione precedente: ${previousSeason.title}`}
               >
                 <IoChevronBack aria-hidden="true" />
-                Stagione precedente
+                <LanguageText textKey="seasonPrevious" />
               </Link>
 
               <Link
@@ -124,7 +134,7 @@ export default async function SeasonPage({ params }: SeasonPageProps) {
                 className="inline-flex items-center gap-2 rounded bg-white/10 px-4 py-2 text-sm font-semibold transition hover:bg-white/20"
                 aria-label={`Vai alla stagione successiva: ${nextSeason.title}`}
               >
-                Stagione successiva
+                <LanguageText textKey="seasonNext" />
                 <IoChevronForward aria-hidden="true" />
               </Link>
             </div>
@@ -132,7 +142,14 @@ export default async function SeasonPage({ params }: SeasonPageProps) {
         </section>
 
         <section className="mt-8 space-y-4 sm:mt-10">
-          <SeasonEpisodesList seasonNumber={selectedSeason.season} episodes={episodes} />
+          <SeasonEpisodesList
+            seasonNumber={selectedSeason.season}
+            episodes={fallbackEpisodes}
+            localizedEpisodesByLanguage={{
+              it: episodesIt,
+              en: episodesEn,
+            }}
+          />
 
           <div className="mt-6 flex flex-wrap gap-3 border-t border-white/10 pt-6">
             <Link
@@ -141,7 +158,7 @@ export default async function SeasonPage({ params }: SeasonPageProps) {
               aria-label={`Vai alla stagione precedente: ${previousSeason.title}`}
             >
               <IoChevronBack aria-hidden="true" />
-              Stagione precedente
+              <LanguageText textKey="seasonPrevious" />
             </Link>
 
             <Link
@@ -149,7 +166,7 @@ export default async function SeasonPage({ params }: SeasonPageProps) {
               className="inline-flex items-center gap-2 rounded bg-white/10 px-4 py-2 text-sm font-semibold transition hover:bg-white/20"
               aria-label={`Vai alla stagione successiva: ${nextSeason.title}`}
             >
-              Stagione successiva
+              <LanguageText textKey="seasonNext" />
               <IoChevronForward aria-hidden="true" />
             </Link>
           </div>

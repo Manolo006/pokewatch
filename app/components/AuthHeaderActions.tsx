@@ -5,6 +5,13 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/app/components/AuthProvider";
 import { db } from "@/app/lib/firebase";
 import { get, ref } from "firebase/database";
+import {
+  getUIText,
+  normalizeUILanguage,
+  type UILanguage,
+  UI_LANGUAGE_CHANGE_EVENT,
+  UI_LANGUAGE_STORAGE_KEY,
+} from "@/app/lib/uiLanguage";
 
 type PublicProfileSettings = {
   profileImageUrl?: string | null;
@@ -16,6 +23,55 @@ export default function AuthHeaderActions() {
   const displayName = user?.displayName?.trim() || user?.email?.split("@")[0] || "Profilo";
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [profileImageBgColor, setProfileImageBgColor] = useState("#e50914");
+  const [episodeTitleLanguage, setEpisodeTitleLanguage] = useState<UILanguage>("it");
+
+  useEffect(() => {
+    const readLanguage = () => {
+      if (typeof window === "undefined") return;
+
+      const fromStorage = normalizeUILanguage(window.localStorage.getItem(UI_LANGUAGE_STORAGE_KEY));
+      setEpisodeTitleLanguage(fromStorage);
+
+      const fromCookie = document.cookie
+        .split(";")
+        .map((entry) => entry.trim())
+        .find((entry) => entry.startsWith(`${UI_LANGUAGE_STORAGE_KEY}=`))
+        ?.split("=")[1]
+        ?.toLowerCase();
+
+      if (fromCookie === "it" || fromCookie === "en") {
+        setEpisodeTitleLanguage(fromCookie);
+      }
+    };
+
+    readLanguage();
+    window.addEventListener(UI_LANGUAGE_CHANGE_EVENT, readLanguage);
+
+    return () => {
+      window.removeEventListener(UI_LANGUAGE_CHANGE_EVENT, readLanguage);
+    };
+  }, []);
+
+  const toggleEpisodeTitleLanguage = () => {
+    const nextLanguage: UILanguage = episodeTitleLanguage === "it" ? "en" : "it";
+    setEpisodeTitleLanguage(nextLanguage);
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(UI_LANGUAGE_STORAGE_KEY, nextLanguage);
+      document.cookie = `${UI_LANGUAGE_STORAGE_KEY}=${nextLanguage}; path=/; max-age=31536000; samesite=lax`;
+      window.dispatchEvent(new Event(UI_LANGUAGE_CHANGE_EVENT));
+
+      if (window.location.pathname.startsWith("/stagione/")) {
+        window.location.reload();
+      }
+    }
+  };
+
+  const currentLanguageCode = episodeTitleLanguage === "it" ? "IT" : "EN";
+  const currentLanguageFlagUrl =
+    episodeTitleLanguage === "it"
+      ? "https://flagcdn.com/w40/it.png"
+      : "https://flagcdn.com/w40/gb.png";
 
   useEffect(() => {
     let active = true;
@@ -64,7 +120,7 @@ export default function AuthHeaderActions() {
   }, [user]);
 
   if (loading) {
-    return <div className="ml-auto text-xs text-white/60">Caricamento account...</div>;
+    return <div className="ml-auto text-xs text-white/60">{getUIText("loadingAccount", episodeTitleLanguage)}</div>;
   }
 
   if (!user) {
@@ -74,14 +130,23 @@ export default function AuthHeaderActions() {
           href="/login"
           className="rounded border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/90 transition hover:bg-white/10"
         >
-          Login
+          {getUIText("login", episodeTitleLanguage)}
         </Link>
         <Link
           href="/register"
           className="rounded bg-white px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-white/90"
         >
-          Registrati
+          {getUIText("register", episodeTitleLanguage)}
         </Link>
+        <button
+          type="button"
+          onClick={toggleEpisodeTitleLanguage}
+          className="inline-flex items-center gap-1.5 rounded border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/90 transition hover:bg-white/10"
+          aria-label="Cambia lingua titoli episodio"
+        >
+          <img src={currentLanguageFlagUrl} alt={currentLanguageCode} className="h-3.5 w-5 rounded-[2px] object-cover" />
+          <span>{currentLanguageCode}</span>
+        </button>
       </div>
     );
   }
@@ -111,7 +176,16 @@ export default function AuthHeaderActions() {
         onClick={() => void logout()}
         className="rounded border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/90 transition hover:bg-white/10"
       >
-        Logout
+        {getUIText("logout", episodeTitleLanguage)}
+      </button>
+      <button
+        type="button"
+        onClick={toggleEpisodeTitleLanguage}
+        className="inline-flex items-center gap-1.5 rounded border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/90 transition hover:bg-white/10"
+        aria-label="Cambia lingua titoli episodio"
+      >
+        <img src={currentLanguageFlagUrl} alt={currentLanguageCode} className="h-3.5 w-5 rounded-[2px] object-cover" />
+        <span>{currentLanguageCode}</span>
       </button>
     </div>
   );

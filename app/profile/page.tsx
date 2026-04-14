@@ -24,6 +24,8 @@ import AuthHeaderActions from "@/app/components/AuthHeaderActions";
 import Navbar from "@/app/components/Navbar";
 import { auth, db, googleProvider } from "@/app/lib/firebase";
 import { allSeasons, episodesLabel, getEpisodesForSeason } from "@/app/data/pokemonCatalog";
+import { getUIText } from "@/app/lib/uiLanguage";
+import { useUILanguage } from "@/app/lib/useUILanguage";
 import ashBadgeSeasonCards from "@/app/data/ashBadgeSeasonCards.json";
 
 type EpisodeFillerType = "non-filler" | "filler" | "misto";
@@ -50,6 +52,7 @@ type SpriteOption = {
 type AshBadgeMilestone = {
   key: string;
   title: string;
+  titleEn?: string;
   city: string;
   itemName: string;
   badgeSpriteId?: number;
@@ -63,7 +66,9 @@ type AshBadgeMilestone = {
 type BadgeSeasonCard = {
   key: string;
   title: string;
+  titleEn?: string;
   subtitle: string;
+  subtitleEn?: string;
   badges: AshBadgeMilestone[];
 };
 
@@ -341,6 +346,7 @@ export default function ProfilePage({
   settingsSection = "profile",
   readOnly = false,
 }: ProfilePageProps = {}) {
+  const language = useUILanguage();
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -1324,6 +1330,8 @@ export default function ProfilePage({
   const badgeSeasonCards = useMemo(
     () =>
       ASH_BADGE_SEASON_CARDS.map((card) => {
+        const localizedCardTitle = language === "en" ? (card.titleEn ?? card.title) : card.title;
+
         const badges = card.badges.map((badge) => {
           const resolvedTarget =
             badge.unlockTarget ??
@@ -1332,8 +1340,11 @@ export default function ProfilePage({
             ? Boolean(watchedBySeason[resolvedTarget.season]?.[resolvedTarget.episode])
             : null;
 
+          const localizedBadgeTitle = language === "en" ? (badge.titleEn ?? badge.title) : badge.title;
+
           return {
             ...badge,
+            title: localizedBadgeTitle,
             imageUrl: getBadgeImageUrl(badge),
             unlocked:
               unlockedByTarget ??
@@ -1350,13 +1361,14 @@ export default function ProfilePage({
 
         return {
           ...card,
+          title: localizedCardTitle,
           badges,
           unlockedCount,
           totalCount: badges.length,
           progressPercent: badges.length > 0 ? (unlockedCount / badges.length) * 100 : 0,
         };
       }),
-    [watchedBySeason, watchedStats.episodesWatched]
+    [language, watchedBySeason, watchedStats.episodesWatched]
   );
 
   const unlockedBadgesCount = badgeSeasonCards.reduce((sum, card) => sum + card.unlockedCount, 0);
@@ -1983,7 +1995,7 @@ export default function ProfilePage({
           <nav className="mobile-top-nav order-3 flex w-full items-center gap-4 overflow-x-auto whitespace-nowrap text-[11px] uppercase tracking-widest text-white/70 sm:order-0 sm:w-auto sm:gap-6 sm:text-xs">
             <Link href="/" className="transition hover:text-white">Home</Link>
             <a href="#" className="transition hover:text-white">Serie TV</a>
-            <a href="/timeline-film" className="transition hover:text-white">TimeLine</a>
+            <a href="/timeline" className="transition hover:text-white">TimeLine</a>
             <Link href="/profile" className="font-bold text-white">Profilo</Link>
           </nav>
 
@@ -2342,8 +2354,8 @@ export default function ProfilePage({
                               <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
                                 <div className="h-full rounded-full bg-[#e50914] transition-all duration-300" style={{ width: `${entry.progress}%` }} />
                               </div>
-                              <p className="text-[11px] text-white/60">{entry.watchedCount}/{entry.episodes.length} episodi · {entry.progress}% visto</p>
-                              <p className="text-xs text-white/60">{entry.season.years} · {episodesLabel(entry.season.episodes)}</p>
+                              <p className="text-[11px] text-white/60">{entry.watchedCount}/{entry.episodes.length} {getUIText("episodes", language)} · {entry.progress}% {getUIText("watched", language)}</p>
+                              <p className="text-xs text-white/60">{entry.season.years} · {episodesLabel(entry.season.episodes, language)}</p>
                             </div>
                           </div>
 
@@ -2445,7 +2457,7 @@ export default function ProfilePage({
                   <h3 className="mt-1 text-xl font-black sm:text-2xl">{selectedSeasonDetail.season.title}</h3>
                   <p className="mt-1 text-sm text-slate-200/85">{selectedSeasonDetail.season.synopsis}</p>
                   <p className="mt-2 text-xs text-slate-300">
-                    Stagione {selectedSeasonDetail.season.season} · {selectedSeasonDetail.season.arc} · {selectedSeasonDetail.season.years} · {episodesLabel(selectedSeasonDetail.season.episodes)}
+                    {getUIText("season", language)} {selectedSeasonDetail.season.season} · {selectedSeasonDetail.season.arc} · {selectedSeasonDetail.season.years} · {episodesLabel(selectedSeasonDetail.season.episodes, language)}
                   </p>
                 </div>
 
@@ -2464,7 +2476,7 @@ export default function ProfilePage({
                   <p className="mt-1 text-2xl font-bold text-emerald-300">{selectedSeasonDetail.watchedCount}</p>
                 </div>
                 <div className="rounded border border-white/10 bg-black/35 p-3 text-center">
-                  <p className="text-[11px] text-slate-300">Totale episodi</p>
+                  <p className="text-[11px] text-slate-300">{getUIText("episodes", language)}</p>
                   <p className="mt-1 text-2xl font-bold text-sky-300">{selectedSeasonDetail.episodes.length}</p>
                 </div>
                 <div className="rounded border border-white/10 bg-black/35 p-3 text-center">

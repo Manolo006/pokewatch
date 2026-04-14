@@ -35,8 +35,8 @@ function getDisplayName(user: User) {
 type StoredPublicProfile = {
   username?: string;
   displayName?: string;
-  joinedAt?: string | null;
   bio?: string;
+  joinedAt?: string | null;
   profileImageUrl?: string | null;
   profileImageBgColor?: string | null;
 };
@@ -74,16 +74,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           const username = stored?.username?.trim() || getUserSlug(nextUser.email);
           const displayName = stored?.displayName?.trim() || getDisplayName(nextUser);
-          const joinedAt = stored?.joinedAt ?? nextUser.metadata.creationTime ?? null;
           const bio = stored?.bio ?? "";
+          const joinedAt = stored?.joinedAt ?? nextUser.metadata.creationTime ?? null;
           const profileImageUrl = stored?.profileImageUrl ?? null;
           const profileImageBgColor = stored?.profileImageBgColor ?? "#e50914";
 
           await update(userPublicProfileRef, {
             username,
             displayName,
-            joinedAt,
             bio,
+            joinedAt,
             profileImageUrl,
             profileImageBgColor,
           });
@@ -92,8 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             uid: nextUser.uid,
             username,
             displayName,
-            joinedAt,
             bio,
+            joinedAt,
             profileImageUrl,
             profileImageBgColor,
           });

@@ -1,8 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import AuthHeaderActions from "@/app/components/AuthHeaderActions";
+import LanguageText from "@/app/components/LanguageText";
+import { getUIText } from "@/app/lib/uiLanguage";
+import { useUILanguage } from "@/app/lib/useUILanguage";
 
 type Era = "Original" | "Advanced" | "DiamondPearl" | "XY";
 
@@ -179,6 +181,7 @@ const eraLabel: Record<Era, string> = {
 };
 
 export default function TimelineFilmPage() {
+  const language = useUILanguage();
   const [eraFilter, setEraFilter] = useState<"all" | Era>("all");
 
   const visible = useMemo(
@@ -194,19 +197,19 @@ export default function TimelineFilmPage() {
           <div className="flex items-center gap-2.5 sm:gap-4">
             <img src="./logo.png" alt="PokéWatch" width={180} height={42} className="h-auto w-[122px] sm:w-[180px]" />
             <span className="rounded bg-yellow-400 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-black">
-              ANIME
+              <LanguageText textKey="animeBadge" />
             </span>
           </div>
 
           <nav className="mobile-top-nav order-3 flex w-full items-center gap-4 overflow-x-auto whitespace-nowrap text-[11px] text-white/80 sm:order-none sm:w-auto sm:gap-6 sm:text-sm">
             <a href="./" className="hover:text-white">
-              Home
+              <LanguageText textKey="home" />
             </a>
             <a href="#" className="hover:text-white">
-              Serie
+              <LanguageText textKey="seriesTv" />
             </a>
-            <a href="./timeline-film" className="hover:text-white">
-              Timeline
+            <a href="./timeline" className="hover:text-white">
+              <LanguageText textKey="timeline" />
             </a>
           </nav>
 
@@ -216,18 +219,18 @@ export default function TimelineFilmPage() {
 
       <main className="mx-auto w-full max-w-[1600px] space-y-6 px-4 py-8 sm:px-8">
         <section className="rounded-2xl border border-white/10 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-transparent p-5">
-          <h1 className="text-2xl font-black sm:text-4xl">Timeline Film Pokémon</h1>
+          <h1 className="text-2xl font-black sm:text-4xl">{getUIText("timelineFilmsTitle", language)}</h1>
           <p className="mt-2 text-sm text-white/75">
-            Timeline visuale stile: episodio → film → episodio, con immagini e collocazioni dalla fonte indicata.
+            {getUIText("timelineFilmsSubtitle", language)}
           </p>
           <a href={DATA_SOURCE} target="_blank" rel="noreferrer" className="mt-3 inline-flex rounded border border-cyan-300/40 px-3 py-1.5 text-xs font-semibold text-cyan-100 hover:bg-cyan-500/15">
-            Apri fonte Pokénerd
+            {getUIText("openSource", language)}
           </a>
         </section>
 
         <section className="grid gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/60">Filtro era</p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/60">{getUIText("eraFilter", language)}</p>
             <div className="flex flex-wrap gap-2">
               {(["all", "Original", "Advanced", "DiamondPearl", "XY"] as const).map((value) => (
                 <button
@@ -238,7 +241,7 @@ export default function TimelineFilmPage() {
                     eraFilter === value ? "border-cyan-300 bg-cyan-500/20 text-cyan-100" : "border-white/20 bg-white/5 text-white/75"
                   }`}
                 >
-                  {value === "all" ? "Tutte" : eraLabel[value]}
+                  {value === "all" ? getUIText("all", language) : eraLabel[value]}
                 </button>
               ))}
             </div>
@@ -256,17 +259,17 @@ export default function TimelineFilmPage() {
                     <div key={item.key} className="relative w-[260px] shrink-0">
                       <div className="relative mb-14 -translate-x-3 rounded-lg border border-sky-300/30 bg-sky-500/10 p-2">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={item.episodeImage} alt={item.beforeEpisode ?? "Episodio"} className="h-28 w-full rounded object-cover" loading="lazy" />
-                        <p className="mt-1 text-[10px] font-bold text-sky-100">EPISODI (SOPRA / SHIFT SX)</p>
-                        <p className="text-xs text-white/85">Prima: {item.beforeEpisode}</p>
-                        <p className="text-xs text-white/70">Dopo: {item.afterEpisode}</p>
+                        <img src={item.episodeImage} alt={item.beforeEpisode ?? getUIText("episodeN", language)} className="h-28 w-full rounded object-cover" loading="lazy" />
+                        <p className="mt-1 text-[10px] font-bold text-sky-100">{getUIText("episodesShiftLabel", language)}</p>
+                        <p className="text-xs text-white/85">{getUIText("before", language)}: {item.beforeEpisode}</p>
+                        <p className="text-xs text-white/70">{getUIText("after", language)}: {item.afterEpisode}</p>
                         <span className="pointer-events-none absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-sky-100 bg-sky-400" />
                       </div>
 
                       <div className="relative mt-14 translate-x-3 rounded-lg border border-red-300/30 bg-red-500/10 p-2">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={item.filmImage} alt={item.filmTitle} className="h-28 w-full rounded object-cover" loading="lazy" />
-                        <p className="mt-1 text-[10px] font-bold text-red-100">FILM (SOTTO / SHIFT DX)</p>
+                        <p className="mt-1 text-[10px] font-bold text-red-100">{getUIText("filmShiftLabel", language)}</p>
                         <p className="text-xs font-semibold text-white">{item.filmTitle}</p>
                         <span className="pointer-events-none absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-red-100 bg-red-400" />
                       </div>
@@ -277,7 +280,7 @@ export default function TimelineFilmPage() {
             </div>
           ) : (
             <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 text-sm text-white/65">
-              Nessun elemento con i filtri attuali.
+              {getUIText("noItemsFilter", language)}
             </div>
           )}
         </section>

@@ -7,6 +7,13 @@ import { ref, get, set } from "firebase/database";
 import { db } from "@/app/lib/firebase";
 import { useAuth } from "@/app/components/AuthProvider";
 import ashBadgeSeasonCards from "@/app/data/ashBadgeSeasonCards.json";
+import {
+  getUIText,
+  normalizeUILanguage,
+  UI_LANGUAGE_CHANGE_EVENT,
+  UI_LANGUAGE_STORAGE_KEY,
+  type UILanguage,
+} from "@/app/lib/uiLanguage";
 
 type EpisodeFillerType = "non-filler" | "filler" | "misto";
 type BadgeUnlockMilestone = {
@@ -31,12 +38,7 @@ type CommunityEpisodeStats = {
 type SeasonEpisodesListProps = {
   seasonNumber: number;
   episodes: PokemonEpisode[];
-};
-
-const fillerTypeLabels: Record<EpisodeFillerType, string> = {
-  "non-filler": "Non filler",
-  filler: "Filler",
-  misto: "Misto",
+  localizedEpisodesByLanguage?: Partial<Record<"it" | "en", PokemonEpisode[]>>;
 };
 
 const fillerTypeBadgeClasses: Record<EpisodeFillerType, string> = {
@@ -219,8 +221,13 @@ const buildCommunityStats = (value: unknown): Record<number, CommunityEpisodeSta
   return byEpisode;
 };
 
-export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpisodesListProps) {
+export default function SeasonEpisodesList({
+  seasonNumber,
+  episodes,
+  localizedEpisodesByLanguage,
+}: SeasonEpisodesListProps) {
   const { user } = useAuth();
+  const [episodeTitleLanguage, setEpisodeTitleLanguage] = useState<UILanguage>("it");
   const [fillerByEpisode, setFillerByEpisode] = useState<Record<number, EpisodeFillerType>>({});
   const [watchedByEpisode, setWatchedByEpisode] = useState<Record<number, boolean>>({});
   const [communityByEpisode, setCommunityByEpisode] = useState<Record<number, CommunityEpisodeStats>>({});
@@ -228,6 +235,32 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
   const [openEpisodeMenuNumber, setOpenEpisodeMenuNumber] = useState<number | null>(null);
   const isFillerLoadedRef = useRef(false);
   const canPersistWatchedRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const applyLanguageFromStorage = () => {
+      setEpisodeTitleLanguage(normalizeUILanguage(window.localStorage.getItem(UI_LANGUAGE_STORAGE_KEY)));
+    };
+
+    applyLanguageFromStorage();
+    window.addEventListener("storage", applyLanguageFromStorage);
+    window.addEventListener(UI_LANGUAGE_CHANGE_EVENT, applyLanguageFromStorage);
+
+    return () => {
+      window.removeEventListener("storage", applyLanguageFromStorage);
+      window.removeEventListener(UI_LANGUAGE_CHANGE_EVENT, applyLanguageFromStorage);
+    };
+  }, []);
+
+  const renderedEpisodes = useMemo(() => {
+    const localizedEpisodes = localizedEpisodesByLanguage?.[episodeTitleLanguage];
+    if (localizedEpisodes && localizedEpisodes.length > 0) {
+      return localizedEpisodes;
+    }
+
+    return episodes;
+  }, [episodeTitleLanguage, episodes, localizedEpisodesByLanguage]);
 
   const loadCommunityVotes = useCallback(async () => {
     if (!db) {
@@ -355,7 +388,7 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
       unclassified: 0,
     } as Record<EpisodeFillerType | "unclassified", number>;
 
-    return episodes.reduce(
+    return renderedEpisodes.reduce(
       (acc, episode) => {
         const value = fillerByEpisode[episode.number];
 
@@ -369,14 +402,21 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
       },
       initial
     );
-  }, [episodes, fillerByEpisode]);
+  }, [renderedEpisodes, fillerByEpisode]);
 
   const watchedCount = useMemo(
-    () => episodes.reduce((count, episode) => count + (watchedByEpisode[episode.number] ? 1 : 0), 0),
-    [episodes, watchedByEpisode]
+    () => renderedEpisodes.reduce((count, episode) => count + (watchedByEpisode[episode.number] ? 1 : 0), 0),
+    [renderedEpisodes, watchedByEpisode]
   );
 
-  const completionPercentage = episodes.length > 0 ? Math.round((watchedCount / episodes.length) * 100) : 0;
+  const completionPercentage =
+    renderedEpisodes.length > 0 ? Math.round((watchedCount / renderedEpisodes.length) * 100) : 0;
+
+  const fillerTypeLabelByLanguage: Record<EpisodeFillerType, string> = {
+    "non-filler": getUIText("nonFiller", episodeTitleLanguage),
+    filler: getUIText("filler", episodeTitleLanguage),
+    misto: getUIText("mixed", episodeTitleLanguage),
+  };
 
   const voteEpisodeType = (episodeNumber: number, type: EpisodeFillerType) => {
     setFillerByEpisode((prev) => ({ ...prev, [episodeNumber]: type }));
@@ -428,31 +468,31 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
           />
         </div>
         <div className="flex items-center justify-between text-xs text-white/70">
-          <span>Completamento visione</span>
+          <span>{getUIText("completion", episodeTitleLanguage)}</span>
           <span>
-            {watchedCount}/{episodes.length} episodi ({completionPercentage}%)
+            {watchedCount}/{renderedEpisodes.length} {getUIText("episodes", episodeTitleLanguage)} ({completionPercentage}%)
           </span>
         </div>
       </div>
 
-      <h2 className="text-2xl font-bold">Episodi</h2>
+      <h2 className="text-2xl font-bold">{getUIText("episodes", episodeTitleLanguage)}</h2>
 
       <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
         <span className="rounded-full border border-emerald-400/30 bg-emerald-500/20 px-3 py-1 text-emerald-200">
-          Non filler: {stats["non-filler"]}
+          {getUIText("nonFiller", episodeTitleLanguage)}: {stats["non-filler"]}
         </span>
         <span className="rounded-full border border-rose-400/30 bg-rose-500/20 px-3 py-1 text-rose-200">
-          Filler: {stats.filler}
+          {getUIText("filler", episodeTitleLanguage)}: {stats.filler}
         </span>
         <span className="rounded-full border border-amber-400/30 bg-amber-500/20 px-3 py-1 text-amber-100">
-          Misto: {stats.misto}
+          {getUIText("mixed", episodeTitleLanguage)}: {stats.misto}
         </span>
         <span className="rounded-full border border-white/20 bg-white/5 px-3 py-1 text-white/80">
-          Da classificare: {stats.unclassified}
+          {getUIText("classifyPending", episodeTitleLanguage)}: {stats.unclassified}
         </span>
       </div>
 
-      {episodes.map((episode) => {
+      {renderedEpisodes.map((episode) => {
         const selectedType = fillerByEpisode[episode.number];
         const isWatched = Boolean(watchedByEpisode[episode.number]);
         const unlockedBadges = BADGES_BY_TARGET[`${seasonNumber}-${episode.number}`] ?? [];
@@ -486,7 +526,7 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-xs text-white/40">
-                    Nessuna thumbnail
+                    {getUIText("noThumbnail", episodeTitleLanguage)}
                   </div>
                 )}
               </div>
@@ -508,7 +548,7 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
                             setOpenEpisodeMenuNumber((prev) => (prev === episode.number ? null : episode.number))
                           }
                           className="rounded border border-white/20 bg-white/5 px-2 py-1 text-sm leading-none text-white/80 transition hover:bg-white/10"
-                          aria-label="Azioni episodio"
+                          aria-label={getUIText("episodeActions", episodeTitleLanguage)}
                         >
                           ⋯
                         </button>
@@ -521,7 +561,7 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
                               disabled={!isWatched}
                               className="w-full rounded px-2 py-1.5 text-left text-xs text-white/85 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-45"
                             >
-                              Togli da guardato
+                              {getUIText("removeFromWatched", episodeTitleLanguage)}
                             </button>
                           </div>
                         ) : null}
@@ -552,7 +592,7 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
                 <p className="text-sm text-white/70">{episode.synopsis}</p>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs text-white/70">Tipo episodio:</span>
+                  <span className="text-xs text-white/70">{getUIText("episodeType", episodeTitleLanguage)}</span>
 
                   <div className="flex flex-wrap gap-1">
                     {(["non-filler", "filler", "misto"] as EpisodeFillerType[]).map((type) => {
@@ -572,7 +612,7 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
                           }`}
                           aria-pressed={isActive}
                         >
-                          {fillerTypeLabels[type]}
+                          {fillerTypeLabelByLanguage[type]}
                         </button>
                       );
                     })}
@@ -587,13 +627,13 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
                         : "border-white/20 bg-white/5 text-white/75"
                     }`}
                   >
-                    {selectedType ? fillerTypeLabels[selectedType] : "Non classificato"}
+                    {selectedType ? fillerTypeLabelByLanguage[selectedType] : getUIText("notClassified", episodeTitleLanguage)}
                   </span>
 
                   <span className="rounded-full border border-sky-400/30 bg-sky-500/15 px-2 py-0.5 text-[11px] font-semibold text-sky-100">
-                    Community: {community?.consensus ? fillerTypeLabels[community.consensus] : "N/D"}
+                    {getUIText("community", episodeTitleLanguage)}: {community?.consensus ? fillerTypeLabelByLanguage[community.consensus] : getUIText("noData", episodeTitleLanguage)}
                     {community?.consensus ? ` · ${communityPercent}%` : ""}
-                    {community ? ` (${community.total} voti)` : ""}
+                    {community ? ` (${community.total} ${getUIText("votes", episodeTitleLanguage)})` : ""}
                   </span>
                 </div>
 
@@ -608,7 +648,7 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
                         }}
                         className="inline-flex items-center rounded bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-500"
                       >
-                        {isPlayerOpen ? "Chiudi player" : "Guarda"}
+                        {isPlayerOpen ? getUIText("closePlayer", episodeTitleLanguage) : getUIText("watch", episodeTitleLanguage)}
                       </button>
 
                     </div>
@@ -621,14 +661,14 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
                             <span className="font-semibold tracking-wide">POKÉWATCH PLAYER</span>
                           </div>
                           <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-white/70">
-                            Episodio {episode.number}
+                            {getUIText("episodeN", episodeTitleLanguage)} {episode.number}
                           </span>
                         </div>
 
                         <div className="aspect-video w-full">
                           <iframe
                             src={getYouTubeEmbedUrl(youtubeVideoId)}
-                            title={`Player episodio ${episode.number}: ${episode.title}`}
+                            title={`${getUIText("playerTitle", episodeTitleLanguage)} ${getUIText("episodeN", episodeTitleLanguage)} ${episode.number}: ${episode.title}`}
                             className="h-full w-full"
                             loading="lazy"
                             referrerPolicy="strict-origin-when-cross-origin"
@@ -637,8 +677,7 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
                           />
                         </div>
                         <div className="border-t border-white/10 bg-black/40 px-3 py-2 text-[11px] text-white/65">
-                          Lingua audio: usa <span className="font-semibold text-white/85">⚙ Impostazioni → Traccia audio</span> nel player.
-                          (Disponibile solo se il video YouTube ha più tracce audio.)
+                          {getUIText("audioTrackHint", episodeTitleLanguage)}
                         </div>
                       </div>
                     ) : null}

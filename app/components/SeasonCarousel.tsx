@@ -9,6 +9,8 @@ import { episodesLabel, type PokemonSeason } from "@/app/data/pokemonCatalog";
 import { ref, get } from "firebase/database";
 import { db } from "@/app/lib/firebase";
 import { useAuth } from "@/app/components/AuthProvider";
+import { getUIText } from "@/app/lib/uiLanguage";
+import { useUILanguage } from "@/app/lib/useUILanguage";
 
 type SeasonCarouselProps = {
   seasons: PokemonSeason[];
@@ -88,6 +90,7 @@ const buildProgressMap = (seasons: PokemonSeason[]) => {
 
 
 function SeasonThumbnail({ seasonNumber, title, arc, accent }: SeasonThumbnailProps) {
+  const language = useUILanguage();
   const [thumbnailSrc, setThumbnailSrc] = useState<string | null>(null);
 
   useEffect(() => {
@@ -142,7 +145,7 @@ function SeasonThumbnail({ seasonNumber, title, arc, accent }: SeasonThumbnailPr
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/10" />
 
       <div className="relative z-10">
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/90">Stagione {seasonNumber}</p>
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/90">{getUIText("season", language)} {seasonNumber}</p>
         <p className="mt-2 inline-block rounded bg-black/35 px-2 py-0.5 text-xs font-semibold text-white/90">
           {arc}
         </p>
@@ -152,6 +155,7 @@ function SeasonThumbnail({ seasonNumber, title, arc, accent }: SeasonThumbnailPr
 }
 
 export default function SeasonCarousel({ seasons }: SeasonCarouselProps) {
+  const language = useUILanguage();
   const { user } = useAuth();
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const swipeGestureRef = useRef(false);
@@ -394,7 +398,7 @@ export default function SeasonCarousel({ seasons }: SeasonCarouselProps) {
           </div>
 
           <p className={`${isMobileView ? "text-[10px]" : "text-[11px]"} text-white/60`}>
-            {watchedProgressBySeason[season.season] ?? 0}% visto
+            {watchedProgressBySeason[season.season] ?? 0}% {getUIText("watched", language)}
           </p>
         </div>
 
@@ -402,7 +406,7 @@ export default function SeasonCarousel({ seasons }: SeasonCarouselProps) {
           <span className="inline-flex items-center gap-1">
             <span>{season.years}</span>
             <GoDotFill className="text-[10px]" aria-hidden="true" />
-            <span>{episodesLabel(season.episodes)}</span>
+            <span>{episodesLabel(season.episodes, language)}</span>
           </span>
         </p>
       </div>
