@@ -60,7 +60,7 @@ export const getEpisodesForSeason = (season: PokemonSeason): PokemonEpisode[] =>
       number: episodeNumber,
       title: `Episodio ${episodeNumber}`,
       duration: "23 min",
-      synopsis: `${season.title}: episodio ${episodeNumber}. Ash e i suoi compagni affrontano una nuova sfida nella saga ${season.arc}.`,
+      synopsis: `${season.title}: episodio ${episodeNumber}. Ash e i suoi compagni affrontano una nuova sfida nella regione di  ${season.arc}.`,
     };
   });
 };

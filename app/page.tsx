@@ -29,14 +29,14 @@ export default function Home() {
           </div>
 
           <nav className="mobile-top-nav order-3 flex w-full items-center gap-4 overflow-x-auto whitespace-nowrap text-[11px] text-white/80 sm:order-none sm:w-auto sm:gap-6 sm:text-sm">
-            <a href="#" className="hover:text-white">
+            <a href="./" className="hover:text-white">
               Home
             </a>
             <a href="#" className="hover:text-white">
               Serie
             </a>
-            <a href="#" className="hover:text-white">
-              Ultime aggiunte
+            <a href="./timeline-film" className="hover:text-white">
+              Timeline
             </a>
           </nav>
 

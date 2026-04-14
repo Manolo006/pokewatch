@@ -6,8 +6,20 @@ import type { PokemonEpisode } from "@/app/data/pokemonCatalog";
 import { ref, get, set } from "firebase/database";
 import { db } from "@/app/lib/firebase";
 import { useAuth } from "@/app/components/AuthProvider";
+import ashBadgeSeasonCards from "@/app/data/ashBadgeSeasonCards.json";
 
 type EpisodeFillerType = "non-filler" | "filler" | "misto";
+type BadgeUnlockMilestone = {
+  key: string;
+  title: string;
+  itemName: string;
+  badgeSpriteId?: number;
+  unlockTarget: {
+    season: number;
+    episode: number;
+  };
+};
+
 type CommunityEpisodeStats = {
   "non-filler": number;
   filler: number;
@@ -36,6 +48,26 @@ const fillerTypeBadgeClasses: Record<EpisodeFillerType, string> = {
 const FILLER_STORAGE_PREFIX = "pokewatch-filler-season";
 const WATCHED_STORAGE_PREFIX = "pokewatch-watched-season";
 const LAST_WATCHED_STORAGE_KEY = "pokewatch-last-watched";
+
+const BADGE_UNLOCK_MILESTONES: BadgeUnlockMilestone[] = (
+  ashBadgeSeasonCards as Array<{ badges: BadgeUnlockMilestone[] }>
+).flatMap((card) => card.badges);
+
+const getPokeApiItemSpriteUrl = (itemName: string) =>
+  `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${itemName}.png`;
+
+const getPokeApiBadgeSpriteUrl = (badgeId: number) =>
+  `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/badges/${badgeId}.png`;
+
+const getBadgeImageUrl = (badge: BadgeUnlockMilestone) =>
+  badge.badgeSpriteId ? getPokeApiBadgeSpriteUrl(badge.badgeSpriteId) : getPokeApiItemSpriteUrl(badge.itemName);
+
+const BADGES_BY_TARGET = BADGE_UNLOCK_MILESTONES.reduce<Record<string, BadgeUnlockMilestone[]>>((acc, badge) => {
+  const key = `${badge.unlockTarget.season}-${badge.unlockTarget.episode}`;
+  if (!acc[key]) acc[key] = [];
+  acc[key].push(badge);
+  return acc;
+}, {});
 
 const getFillerStorageKey = (seasonNumber: number) => `${FILLER_STORAGE_PREFIX}-${seasonNumber}`;
 const getWatchedStorageKey = (seasonNumber: number) => `${WATCHED_STORAGE_PREFIX}-${seasonNumber}`;
@@ -423,6 +455,7 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
       {episodes.map((episode) => {
         const selectedType = fillerByEpisode[episode.number];
         const isWatched = Boolean(watchedByEpisode[episode.number]);
+        const unlockedBadges = BADGES_BY_TARGET[`${seasonNumber}-${episode.number}`] ?? [];
         const community = communityByEpisode[episode.number];
         const youtubeVideoId = extractYouTubeVideoId(episode.youtubeUrl);
         const isPlayerOpen = openEpisodeNumber === episode.number;
@@ -465,33 +498,54 @@ export default function SeasonEpisodesList({ seasonNumber, episodes }: SeasonEpi
               <div className="min-w-0 flex-1 space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="text-base font-bold sm:text-lg">{episode.title}</h3>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-white/60">{episode.duration}</span>
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setOpenEpisodeMenuNumber((prev) => (prev === episode.number ? null : episode.number))
-                        }
-                        className="rounded border border-white/20 bg-white/5 px-2 py-1 text-sm leading-none text-white/80 transition hover:bg-white/10"
-                        aria-label="Azioni episodio"
-                      >
-                        ⋯
-                      </button>
+                  <div className="flex flex-col items-end gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-white/60">{episode.duration}</span>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setOpenEpisodeMenuNumber((prev) => (prev === episode.number ? null : episode.number))
+                          }
+                          className="rounded border border-white/20 bg-white/5 px-2 py-1 text-sm leading-none text-white/80 transition hover:bg-white/10"
+                          aria-label="Azioni episodio"
+                        >
+                          ⋯
+                        </button>
 
-                      {openEpisodeMenuNumber === episode.number ? (
-                        <div className="absolute right-0 top-full z-10 mt-1 w-44 rounded border border-white/15 bg-zinc-900 p-1.5 shadow-xl">
-                          <button
-                            type="button"
-                            onClick={() => unmarkEpisodeAsWatched(episode.number)}
-                            disabled={!isWatched}
-                            className="w-full rounded px-2 py-1.5 text-left text-xs text-white/85 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-45"
-                          >
-                            Togli da guardato
-                          </button>
-                        </div>
-                      ) : null}
+                        {openEpisodeMenuNumber === episode.number ? (
+                          <div className="absolute right-0 top-full z-10 mt-1 w-44 rounded border border-white/15 bg-zinc-900 p-1.5 shadow-xl">
+                            <button
+                              type="button"
+                              onClick={() => unmarkEpisodeAsWatched(episode.number)}
+                              disabled={!isWatched}
+                              className="w-full rounded px-2 py-1.5 text-left text-xs text-white/85 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-45"
+                            >
+                              Togli da guardato
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
+
+                    {unlockedBadges.length > 0 ? (
+                      <div className="flex flex-wrap justify-end gap-1.5">
+                        {unlockedBadges.map((badge) => (
+                          <div key={badge.key} className="group relative inline-flex">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={getBadgeImageUrl(badge)}
+                              alt={badge.title}
+                              className="h-8 w-8 object-contain"
+                              loading="lazy"
+                            />
+                            <span className="pointer-events-none absolute bottom-full right-0 z-20 mb-1 hidden min-w-max rounded bg-black px-2 py-1 text-[10px] font-semibold text-white shadow-lg group-hover:block">
+                              {badge.title} · S{badge.unlockTarget.season} E{badge.unlockTarget.episode}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
 
