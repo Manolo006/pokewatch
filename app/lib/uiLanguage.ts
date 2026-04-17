@@ -60,11 +60,7 @@ export const uiText = {
     en: "Visual timeline: episode → movie → episode, with images and placements from the source.",
   },
   openSource: { it: "Apri fonte Pokénerd", en: "Open Pokénerd source" },
-  episodesShiftLabel: { it: "EPISODI (SOPRA / SHIFT SX)", en: "EPISODES (TOP / LEFT SHIFT)" },
-  filmShiftLabel: { it: "FILM (SOTTO / SHIFT DX)", en: "MOVIE (BOTTOM / RIGHT SHIFT)" },
   noSeasonAvailable: { it: "Nessuna stagione disponibile.", en: "No season available." },
-  before: { it: "Prima", en: "Before" },
-  after: { it: "Dopo", en: "After" },
   footerRights: { it: "© 2026 PokéWatch. Tutti i diritti riservati.", en: "© 2026 PokéWatch. All rights reserved." },
 } as const;
 
