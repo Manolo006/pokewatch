@@ -41,6 +41,37 @@ type SeasonEpisodesListProps = {
   localizedEpisodesByLanguage?: Partial<Record<"it" | "en", PokemonEpisode[]>>;
 };
 
+type YouTubePlayerInstance = {
+  getCurrentTime: () => number;
+  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+  destroy: () => void;
+};
+
+type YouTubePlayerConstructor = new (
+  elementId: string,
+  options: {
+    videoId: string;
+    playerVars?: Record<string, string | number>;
+    events?: {
+      onReady?: (event: { target: YouTubePlayerInstance }) => void;
+      onStateChange?: (event: { data: number; target: YouTubePlayerInstance }) => void;
+    };
+  }
+) => YouTubePlayerInstance;
+
+declare global {
+  interface Window {
+    YT?: {
+      Player?: YouTubePlayerConstructor;
+      PlayerState?: {
+        ENDED: number;
+        PAUSED: number;
+      };
+    };
+    onYouTubeIframeAPIReady?: () => void;
+  }
+}
+
 const fillerTypeBadgeClasses: Record<EpisodeFillerType, string> = {
   "non-filler": "bg-emerald-500/20 text-emerald-200 border-emerald-400/30",
   filler: "bg-rose-500/20 text-rose-200 border-rose-400/30",
@@ -50,6 +81,11 @@ const fillerTypeBadgeClasses: Record<EpisodeFillerType, string> = {
 const FILLER_STORAGE_PREFIX = "pokewatch-filler-season";
 const WATCHED_STORAGE_PREFIX = "pokewatch-watched-season";
 const LAST_WATCHED_STORAGE_KEY = "pokewatch-last-watched";
+const PLAYBACK_POSITION_STORAGE_PREFIX = "pokewatch-playback-season";
+const YOUTUBE_IFRAME_API_SRC = "https://www.youtube.com/iframe_api";
+const PLAYBACK_SAVE_INTERVAL_MS = 5000;
+
+let youtubeIframeApiPromise: Promise<void> | null = null;
 
 const BADGE_UNLOCK_MILESTONES: BadgeUnlockMilestone[] = (
   ashBadgeSeasonCards as Array<{ badges: BadgeUnlockMilestone[] }>
@@ -94,20 +130,42 @@ const extractYouTubeVideoId = (youtubeUrl?: string) => {
   }
 };
 
-const getYouTubeEmbedUrl = (videoId: string) => {
-  const params = new URLSearchParams({
-    autoplay: "1",
-    rel: "0",
-    controls: "1",
-    fs: "1",
-    playsinline: "1",
-    iv_load_policy: "3",
-    color: "white",
-    hl: "it",
-    enablejsapi: "1",
+const getPlaybackStorageKey = (seasonNumber: number, episodeNumber: number) =>
+  `${PLAYBACK_POSITION_STORAGE_PREFIX}-${seasonNumber}-episode-${episodeNumber}`;
+
+const getPlayerContainerId = (seasonNumber: number, episodeNumber: number) =>
+  `youtube-player-season-${seasonNumber}-episode-${episodeNumber}`;
+
+const loadYouTubeIframeApi = () => {
+  if (typeof window === "undefined") return Promise.resolve();
+  if (window.YT?.Player) return Promise.resolve();
+
+  if (youtubeIframeApiPromise) {
+    return youtubeIframeApiPromise;
+  }
+
+  youtubeIframeApiPromise = new Promise<void>((resolve) => {
+    const previousReadyCallback = window.onYouTubeIframeAPIReady;
+
+    window.onYouTubeIframeAPIReady = () => {
+      if (typeof previousReadyCallback === "function") {
+        previousReadyCallback();
+      }
+      resolve();
+    };
+
+    const existingScript = document.querySelector<HTMLScriptElement>(`script[src="${YOUTUBE_IFRAME_API_SRC}"]`);
+    if (existingScript) {
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = YOUTUBE_IFRAME_API_SRC;
+    script.async = true;
+    document.head.appendChild(script);
   });
 
-  return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
+  return youtubeIframeApiPromise;
 };
 
 const parseFillerStoredValue = (rawValue: string | null): Record<number, EpisodeFillerType> => {
@@ -235,6 +293,105 @@ export default function SeasonEpisodesList({
   const [openEpisodeMenuNumber, setOpenEpisodeMenuNumber] = useState<number | null>(null);
   const isFillerLoadedRef = useRef(false);
   const canPersistWatchedRef = useRef(false);
+  const playerRef = useRef<YouTubePlayerInstance | null>(null);
+  const playerSaveIntervalRef = useRef<number | null>(null);
+  const activePlayerEpisodeRef = useRef<number | null>(null);
+  const activePlayerVideoIdRef = useRef<string | null>(null);
+  const lastSavedSecondRef = useRef<number | null>(null);
+
+  const getStoredPlaybackSecond = useCallback(
+    (episodeNumber: number, videoId: string) => {
+      if (typeof window === "undefined") return null;
+
+      const raw = window.localStorage.getItem(getPlaybackStorageKey(seasonNumber, episodeNumber));
+      if (!raw) return null;
+
+      try {
+        const parsed = JSON.parse(raw) as { videoId?: string; currentTime?: unknown };
+        if (parsed.videoId !== videoId) return null;
+
+        const currentTime = Number(parsed.currentTime);
+        if (!Number.isFinite(currentTime) || currentTime <= 0) return null;
+
+        return Math.floor(currentTime);
+      } catch {
+        return null;
+      }
+    },
+    [seasonNumber]
+  );
+
+  const storePlaybackSecond = useCallback(
+    (episodeNumber: number, videoId: string, second: number) => {
+      if (typeof window === "undefined") return;
+
+      const safeSecond = Math.max(0, Math.floor(second));
+      window.localStorage.setItem(
+        getPlaybackStorageKey(seasonNumber, episodeNumber),
+        JSON.stringify({
+          seasonNumber,
+          episodeNumber,
+          videoId,
+          currentTime: safeSecond,
+          updatedAt: Date.now(),
+        })
+      );
+    },
+    [seasonNumber]
+  );
+
+  const clearStoredPlaybackSecond = useCallback(
+    (episodeNumber: number) => {
+      if (typeof window === "undefined") return;
+      window.localStorage.removeItem(getPlaybackStorageKey(seasonNumber, episodeNumber));
+    },
+    [seasonNumber]
+  );
+
+  const persistCurrentPlaybackSecond = useCallback(
+    (force = false) => {
+      const player = playerRef.current;
+      const activeEpisodeNumber = activePlayerEpisodeRef.current;
+      const activeVideoId = activePlayerVideoIdRef.current;
+
+      if (!player || !activeEpisodeNumber || !activeVideoId) return;
+
+      const currentSecond = Math.max(0, Math.floor(player.getCurrentTime()));
+      if (!force && currentSecond <= 0) return;
+      if (!force && lastSavedSecondRef.current === currentSecond) return;
+
+      lastSavedSecondRef.current = currentSecond;
+      storePlaybackSecond(activeEpisodeNumber, activeVideoId, currentSecond);
+    },
+    [storePlaybackSecond]
+  );
+
+  const stopPlayerTracking = useCallback(() => {
+    if (playerSaveIntervalRef.current !== null) {
+      window.clearInterval(playerSaveIntervalRef.current);
+      playerSaveIntervalRef.current = null;
+    }
+  }, []);
+
+  const destroyCurrentPlayer = useCallback(
+    (persist = true) => {
+      if (persist) {
+        persistCurrentPlaybackSecond(true);
+      }
+
+      stopPlayerTracking();
+
+      if (playerRef.current) {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
+
+      activePlayerEpisodeRef.current = null;
+      activePlayerVideoIdRef.current = null;
+      lastSavedSecondRef.current = null;
+    },
+    [persistCurrentPlaybackSecond, stopPlayerTracking]
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -379,6 +536,106 @@ export default function SeasonEpisodesList({
       window.localStorage.setItem(storageKey, JSON.stringify(watchedByEpisode));
     });
   }, [seasonNumber, watchedByEpisode, user]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (!openEpisodeNumber) {
+      destroyCurrentPlayer(true);
+      return;
+    }
+
+    const activeEpisode = renderedEpisodes.find((episode) => episode.number === openEpisodeNumber);
+    const activeVideoId = extractYouTubeVideoId(activeEpisode?.youtubeUrl);
+
+    if (!activeEpisode || !activeVideoId) {
+      destroyCurrentPlayer(true);
+      return;
+    }
+
+    const containerId = getPlayerContainerId(seasonNumber, activeEpisode.number);
+    let isCancelled = false;
+
+    void loadYouTubeIframeApi()
+      .then(() => {
+        if (isCancelled) return;
+
+        const Player = window.YT?.Player;
+        if (!Player) return;
+
+        destroyCurrentPlayer(true);
+        activePlayerEpisodeRef.current = activeEpisode.number;
+        activePlayerVideoIdRef.current = activeVideoId;
+
+        const player = new Player(containerId, {
+          videoId: activeVideoId,
+          playerVars: {
+            autoplay: 1,
+            rel: 0,
+            controls: 1,
+            fs: 1,
+            playsinline: 1,
+            iv_load_policy: 3,
+            color: "white",
+            hl: "it",
+            enablejsapi: 1,
+            origin: window.location.origin,
+          },
+          events: {
+            onReady: (event) => {
+              playerRef.current = event.target;
+
+              const storedSecond = getStoredPlaybackSecond(activeEpisode.number, activeVideoId);
+              if (storedSecond && storedSecond > 0) {
+                event.target.seekTo(storedSecond, true);
+              }
+
+              stopPlayerTracking();
+              playerSaveIntervalRef.current = window.setInterval(() => {
+                persistCurrentPlaybackSecond(false);
+              }, PLAYBACK_SAVE_INTERVAL_MS);
+            },
+            onStateChange: (event) => {
+              const playerState = window.YT?.PlayerState;
+
+              if (playerState && event.data === playerState.ENDED) {
+                clearStoredPlaybackSecond(activeEpisode.number);
+                lastSavedSecondRef.current = null;
+                return;
+              }
+
+              if (playerState && event.data === playerState.PAUSED) {
+                persistCurrentPlaybackSecond(true);
+              }
+            },
+          },
+        });
+
+        playerRef.current = player;
+      })
+      .catch(() => {
+        // ignore IFrame API load errors and keep fallback UI intact
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    openEpisodeNumber,
+    renderedEpisodes,
+    seasonNumber,
+    clearStoredPlaybackSecond,
+    destroyCurrentPlayer,
+    getStoredPlaybackSecond,
+    persistCurrentPlaybackSecond,
+    stopPlayerTracking,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      destroyCurrentPlayer(true);
+    };
+  }, [destroyCurrentPlayer]);
 
   const stats = useMemo(() => {
     const initial = {
@@ -666,14 +923,10 @@ export default function SeasonEpisodesList({
                         </div>
 
                         <div className="aspect-video w-full">
-                          <iframe
-                            src={getYouTubeEmbedUrl(youtubeVideoId)}
-                            title={`${getUIText("playerTitle", episodeTitleLanguage)} ${getUIText("episodeN", episodeTitleLanguage)} ${episode.number}: ${episode.title}`}
+                          <div
+                            id={getPlayerContainerId(seasonNumber, episode.number)}
                             className="h-full w-full"
-                            loading="lazy"
-                            referrerPolicy="strict-origin-when-cross-origin"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                            allowFullScreen
+                            aria-label={`${getUIText("playerTitle", episodeTitleLanguage)} ${getUIText("episodeN", episodeTitleLanguage)} ${episode.number}: ${episode.title}`}
                           />
                         </div>
                         <div className="border-t border-white/10 bg-black/40 px-3 py-2 text-[11px] text-white/65">
