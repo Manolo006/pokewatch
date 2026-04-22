@@ -1,4 +1,5 @@
 import pokeRows from "./pokeRows.json";
+import episodeSynopsisOverridesRaw from "./episodeSynopsisOverrides.json";
 import type { UILanguage } from "@/app/lib/uiLanguage";
 
 type LocalizedText = {
@@ -155,6 +156,15 @@ export type PokemonEpisode = {
   youtubeUrl?: string;
 };
 
+type EpisodeSynopsisOverrides = Record<number, Record<number, string>>;
+
+const episodeSynopsisOverrides: EpisodeSynopsisOverrides = Object.fromEntries(
+  Object.entries(episodeSynopsisOverridesRaw).map(([seasonKey, episodes]) => [
+    Number(seasonKey),
+    Object.fromEntries(Object.entries(episodes).map(([episodeKey, synopsis]) => [Number(episodeKey), synopsis])),
+  ])
+) as EpisodeSynopsisOverrides;
+
 const getEpisodeCount = (season: PokemonSeason) => {
   if (season.episodes && season.episodes > 0) return season.episodes;
   return 24;
@@ -162,15 +172,17 @@ const getEpisodeCount = (season: PokemonSeason) => {
 
 export const getEpisodesForSeason = (season: PokemonSeason): PokemonEpisode[] => {
   const totalEpisodes = getEpisodeCount(season);
+  const seasonOverrides = episodeSynopsisOverrides[season.season] ?? {};
 
   return Array.from({ length: totalEpisodes }, (_, index) => {
     const episodeNumber = index + 1;
+    const customSynopsis = seasonOverrides[episodeNumber];
 
     return {
       number: episodeNumber,
       title: `Episodio ${episodeNumber}`,
       duration: "23 min",
-      synopsis: `${season.title}: episodio ${episodeNumber}. Ash e i suoi compagni affrontano una nuova sfida nella regione di  ${season.arc}.`,
+      synopsis: customSynopsis ?? "",
     };
   });
 };
