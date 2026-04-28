@@ -765,7 +765,7 @@ export default function SeasonEpisodesList({
           <article
             key={episode.number}
             id={`episodio-${episode.number}`}
-            className={`rounded-lg border p-4 transition-colors ${
+            className={`scroll-mt-[38vh] rounded-lg border p-4 transition-colors ${
               isWatched
                 ? "border-blue-400/40 bg-blue-900/35"
                 : "border-white/10 bg-zinc-900/80"
