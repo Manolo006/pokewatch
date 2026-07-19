@@ -61,7 +61,10 @@ export const uiText = {
   },
   openSource: { it: "Apri fonte Pokénerd", en: "Open Pokénerd source" },
   noSeasonAvailable: { it: "Nessuna stagione disponibile.", en: "No season available." },
-  footerRights: { it: "© 2026 PokéWatch. Tutti i diritti riservati.", en: "© 2026 PokéWatch. All rights reserved." },
+  footerRights: { 
+    it: "© 2026 PokéWatch. Progetto fan non ufficiale. Pokémon e i marchi correlati appartengono a Nintendo, Creatures Inc. e GAME FREAK inc.", 
+    en: "© 2026 PokéWatch. Unofficial fan project. Pokémon and related properties are trademarks of Nintendo, Creatures Inc., and GAME FREAK inc." 
+  },
 } as const;
 
 export type UITextKey = keyof typeof uiText;

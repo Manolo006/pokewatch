@@ -7,7 +7,7 @@ export const seasonPlaylists: Partial<Record<number, string>> = {
   6: "https://youtube.com/playlist?list=PLRcHmntfmJ8AYULKvzhleQPgPRinNDpc0",
   7: "https://youtube.com/playlist?list=PLRcHmntfmJ8BWeT4kzalbhx1r43bJv7pI",
   8: "https://youtube.com/playlist?list=PLRcHmntfmJ8BdccTC3w86qIBdUjNDfPGV",
-  9: "https://youtube.com/playlist?list=PLRcHmntfmJ8A7vV0RYnAu0farLTV_T1i",
+  9: "https://youtube.com/playlist?list=PLRcHmntfmJ8DzeYoWwk7RsAbl2w-sg0zR",
 };
 
 export const getSeasonPlaylistUrl = (seasonNumber: number) => seasonPlaylists[seasonNumber] ?? null;
